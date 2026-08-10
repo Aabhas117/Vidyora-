@@ -1,25 +1,23 @@
+import { NavLink } from "react-router-dom";
 import { Home, TrendingUp, Users, History, ThumbsUp, ListVideo, X } from "lucide-react";
 
+// `path: null` = no page exists for this yet (Trending, Subscriptions weren't
+// part of the original page list). These stay inert for now rather than
+// linking to a route that doesn't exist.
 const navItems = [
-  { label: "Home", icon: Home, active: true },
-  { label: "Trending", icon: TrendingUp },
-  { label: "Subscriptions", icon: Users },
-  { label: "History", icon: History },
-  { label: "Liked Videos", icon: ThumbsUp },
-  { label: "Playlists", icon: ListVideo },
+  { label: "Home", icon: Home, path: "/" },
+  { label: "Trending", icon: TrendingUp, path: null },
+  { label: "Subscriptions", icon: Users, path: null },
+  { label: "History", icon: History, path: "/history" },
+  { label: "Liked Videos", icon: ThumbsUp, path: "/liked-videos" },
+  { label: "Playlists", icon: ListVideo, path: "/playlists" },
 ];
 
-// `open` / `onClose` control visibility on mobile (a slide-in panel).
-// On desktop (md breakpoint and up) the sidebar is always visible via CSS.
 export default function Sidebar({ open, onClose }) {
   return (
     <>
-      {/* Dark overlay behind the sidebar on mobile, closes it on click */}
       {open && (
-        <div
-          onClick={onClose}
-          className="fixed inset-0 z-30 bg-black/50 md:hidden"
-        />
+        <div onClick={onClose} className="fixed inset-0 z-30 bg-black/50 md:hidden" />
       )}
 
       <aside
@@ -35,19 +33,36 @@ export default function Sidebar({ open, onClose }) {
         </div>
 
         <nav className="flex flex-col gap-1 p-3">
-          {navItems.map(({ label, icon: Icon, active }) => (
-            <button
-              key={label}
-              className={`flex items-center gap-4 px-3 py-2.5 rounded-lg text-sm text-left transition-colors ${
-                active
-                  ? "bg-zinc-800 text-violet-400 font-medium"
-                  : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
-              }`}
-            >
-              <Icon size={18} />
-              {label}
-            </button>
-          ))}
+          {navItems.map(({ label, icon: Icon, path }) =>
+            path ? (
+              <NavLink
+                key={label}
+                to={path}
+                end={path === "/"}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `flex items-center gap-4 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                    isActive
+                      ? "bg-zinc-800 text-violet-400 font-medium"
+                      : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
+                  }`
+                }
+              >
+                <Icon size={18} />
+                {label}
+              </NavLink>
+            ) : (
+              <button
+                key={label}
+                disabled
+                title="Coming soon"
+                className="flex items-center gap-4 px-3 py-2.5 rounded-lg text-sm text-left text-zinc-600 cursor-not-allowed"
+              >
+                <Icon size={18} />
+                {label}
+              </button>
+            )
+          )}
         </nav>
       </aside>
     </>

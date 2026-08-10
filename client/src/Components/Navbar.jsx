@@ -1,9 +1,20 @@
-import { Link } from "react-router-dom";
-import { Search, Menu, LogOut } from "lucide-react";
-import { useAuth } from "../hooks/useAuth";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search as SearchIcon, Menu, LogOut, Upload } from "lucide-react";
+import { useAuth } from "../Hooks/useAuth";
 
 export default function Navbar({ onMenuClick }) {
   const { user, isAuthenticated, logout } = useAuth();
+  const [query, setQuery] = useState("");
+  const navigate = useNavigate();
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    const trimmed = query.trim();
+    if (trimmed) {
+      navigate(`/search?q=${encodeURIComponent(trimmed)}`);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 h-16 bg-zinc-950/95 backdrop-blur border-b border-zinc-800">
@@ -20,21 +31,37 @@ export default function Navbar({ onMenuClick }) {
           Vidyora
         </Link>
 
-        <div className="flex-1 max-w-xl mx-auto hidden sm:flex items-center bg-zinc-900 border border-zinc-800 rounded-full pl-4 pr-1 py-1 focus-within:border-violet-500/60 transition-colors">
+        <form
+          onSubmit={handleSearchSubmit}
+          className="flex-1 max-w-xl mx-auto hidden sm:flex items-center bg-zinc-900 border border-zinc-800 rounded-full pl-4 pr-1 py-1 focus-within:border-violet-500/60 transition-colors"
+        >
           <input
             type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
             placeholder="Search videos"
             className="flex-1 bg-transparent text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
           />
-          <button className="p-2 rounded-full bg-zinc-800 text-zinc-400 hover:text-violet-400 transition-colors">
-            <Search size={16} />
+          <button
+            type="submit"
+            className="p-2 rounded-full bg-zinc-800 text-zinc-400 hover:text-violet-400 transition-colors"
+            aria-label="Search"
+          >
+            <SearchIcon size={16} />
           </button>
-        </div>
+        </form>
 
-        {/* Auth-aware section — everything else in the Navbar is unchanged */}
         <div className="ml-auto flex items-center gap-3">
           {isAuthenticated ? (
             <>
+              <Link
+                to="/upload"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-700 text-sm text-zinc-300 hover:border-violet-500/50 hover:text-violet-400 transition-colors"
+              >
+                <Upload size={16} />
+                <span className="hidden sm:inline">Upload</span>
+              </Link>
+
               <Link to="/profile" className="flex items-center gap-2 group">
                 <img
                   src={user.avatar}
@@ -45,6 +72,7 @@ export default function Navbar({ onMenuClick }) {
                   {user.username}
                 </span>
               </Link>
+
               <button
                 onClick={logout}
                 className="p-2 rounded-full text-zinc-400 hover:text-red-400 hover:bg-zinc-800 transition-colors"
@@ -55,10 +83,7 @@ export default function Navbar({ onMenuClick }) {
             </>
           ) : (
             <>
-              <Link
-                to="/login"
-                className="text-sm text-zinc-300 hover:text-zinc-100 transition-colors"
-              >
+              <Link to="/login" className="text-sm text-zinc-300 hover:text-zinc-100 transition-colors">
                 Login
               </Link>
               <Link

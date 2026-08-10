@@ -1,14 +1,25 @@
 import { useParams, Link } from "react-router-dom";
 import { Share2, Bookmark } from "lucide-react";
-import videos from "../data/videos";
-import VideoPlayer from "../components/VideoPlayer";
-import LikeButton from "../components/LikeButton";
-import SubscriptionButton from "../components/SubscriptionButton";
-import CommentList from "../components/CommentList";
+import { useEffect } from "react";
+import { useHistory } from "../Hooks/useHistory";
+import videos from "../Data/videos";
+import VideoPlayer from "../Components/VideoPlayer";
+import LikeButton from "../Components/LikeButton";
+import SubscriptionButton from "../Components/SubscriptionButton";
+import CommentList from "../Components/CommentList";
+import AddToPlaylistButton from "../Components/AddToPlaylistButton";
 
 export default function WatchVideo() {
   const { videoId } = useParams();
   const video = videos.find((v) => v.id === Number(videoId));
+  const { addToHistory } = useHistory();
+
+  useEffect(() => {
+    if (video) {
+      addToHistory(video);
+    }
+  }, [video, addToHistory]);
+
   const upNext = videos.filter((v) => v.id !== Number(videoId));
 
   if (!video) {
@@ -41,7 +52,7 @@ export default function WatchVideo() {
           </div>
 
           <div className="flex items-center gap-3">
-            <LikeButton initialLikes={128} />
+            <LikeButton video={video} />
             <button className="flex items-center gap-2 px-4 py-2 rounded-full border border-zinc-700 text-zinc-300 hover:border-zinc-500 transition-colors">
               <Share2 size={16} /> Share
             </button>
