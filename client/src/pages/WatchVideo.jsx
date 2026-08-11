@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { Share2, Bookmark } from "lucide-react";
+import { Share2 } from "lucide-react";
 import { useEffect } from "react";
 import { useHistory } from "../Hooks/useHistory";
 import videos from "../Data/videos";
@@ -8,6 +8,7 @@ import LikeButton from "../Components/LikeButton";
 import SubscriptionButton from "../Components/SubscriptionButton";
 import CommentList from "../Components/CommentList";
 import AddToPlaylistButton from "../Components/AddToPlaylistButton";
+import { getChannelId } from "../Data/channelUtils";
 
 export default function WatchVideo() {
   const { videoId } = useParams();
@@ -26,7 +27,10 @@ export default function WatchVideo() {
     return (
       <div className="text-center py-20">
         <p className="text-zinc-400">Video not found.</p>
-        <Link to="/" className="text-violet-400 text-sm hover:underline mt-2 inline-block">
+        <Link
+          to="/"
+          className="text-violet-400 text-sm hover:underline mt-2 inline-block"
+        >
           ← Back to Home
         </Link>
       </div>
@@ -39,16 +43,37 @@ export default function WatchVideo() {
       <div className="order-1 xl:order-none xl:col-start-1 xl:row-start-1">
         <VideoPlayer src={video.videoUrl} poster={video.thumbnail} />
 
-        <h1 className="text-lg font-semibold text-zinc-100 mt-4">{video.title}</h1>
+        <h1 className="text-lg font-semibold text-zinc-100 mt-4">
+          {video.title}
+        </h1>
 
         <div className="flex flex-wrap items-center justify-between gap-4 mt-3">
           <div className="flex items-center gap-3">
-            <img src={video.avatar} alt={video.channel} className="h-11 w-11 rounded-full bg-zinc-800" />
+            <Link to={`/channel/${getChannelId(video.channel)}`}>
+              <img
+                src={video.avatar}
+                alt={video.channel}
+                className="h-11 w-11 rounded-full bg-zinc-800"
+              />
+            </Link>
             <div>
-              <p className="text-sm font-medium text-zinc-100">{video.channel}</p>
-              <p className="text-xs text-zinc-500">{video.views} · {video.uploaded}</p>
+              <Link
+                to={`/channel/${getChannelId(video.channel)}`}
+                className="text-sm font-medium text-zinc-100 hover:text-violet-400 transition-colors"
+              >
+                {video.channel}
+              </Link>
+              <p className="text-xs text-zinc-500">
+                {video.views} · {video.uploaded}
+              </p>
             </div>
-            <SubscriptionButton />
+            <SubscriptionButton
+              channel={{
+                id: getChannelId(video.channel),
+                name: video.channel,
+                avatar: video.avatar,
+              }}
+            />
           </div>
 
           <div className="flex items-center gap-3">
@@ -56,14 +81,14 @@ export default function WatchVideo() {
             <button className="flex items-center gap-2 px-4 py-2 rounded-full border border-zinc-700 text-zinc-300 hover:border-zinc-500 transition-colors">
               <Share2 size={16} /> Share
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-full border border-zinc-700 text-zinc-300 hover:border-zinc-500 transition-colors">
-              <Bookmark size={16} /> Save
-            </button>
+            <AddToPlaylistButton video={video} />
           </div>
         </div>
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 mt-4">
-          <p className="text-sm text-zinc-300 whitespace-pre-line">{video.description}</p>
+          <p className="text-sm text-zinc-300 whitespace-pre-line">
+            {video.description}
+          </p>
         </div>
       </div>
 

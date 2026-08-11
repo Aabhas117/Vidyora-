@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UploadCloud, Image as ImageIcon, CheckCircle2, Film } from "lucide-react";
 import { uploadVideo } from "../Services/uploadService";
+import { useAuth } from "../Hooks/useAuth";
+import { useUserVideos } from "../Hooks/useUserVideos";
 
 const CATEGORIES = ["Education", "Technology", "Gaming", "Music", "Entertainment", "Sports", "News", "Other"];
 const VISIBILITY_OPTIONS = ["Public", "Unlisted", "Private"];
@@ -30,6 +32,9 @@ export default function UpLoadVideo() {
 
   const videoInputRef = useRef(null);
   const thumbnailInputRef = useRef(null);
+
+  const { user } = useAuth();
+  const { addUserVideo } = useUserVideos();
 
   useEffect(() => {
     return () => {
@@ -103,10 +108,19 @@ export default function UpLoadVideo() {
     setProgress(0);
 
     try {
-      await uploadVideo(
+      const result = await uploadVideo(
         { videoFile, thumbnailFile, title, description, category, visibility },
         (pct) => setProgress(pct)
       );
+
+      addUserVideo({
+        ...result,
+        channel: user.fullName,
+        avatar: user.avatar,
+        views: "0 views",
+        uploaded: "Just now",
+      });
+
       setStatus("success");
     } catch (err) {
       setStatus("error");
