@@ -63,11 +63,17 @@ export default function Navbar({ onMenuClick }) {
               </Link>
 
               <Link to="/profile" className="flex items-center gap-2 group">
-                <img
-                  src={user.avatar}
-                  alt={user.username}
-                  className="h-8 w-8 rounded-full object-cover bg-zinc-800 border border-zinc-700"
-                />
+                {user.avatar ? (
+                  <img
+                    src={user.avatar}
+                    alt={user.username}
+                    className="h-8 w-8 rounded-full object-cover bg-zinc-800 border border-zinc-700"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs text-violet-400">
+                    {user.username?.[0]?.toUpperCase() || "?"}
+                  </div>
+                )}
                 <span className="text-sm text-zinc-300 group-hover:text-violet-400 transition-colors hidden md:inline">
                   {user.username}
                 </span>
@@ -83,7 +89,10 @@ export default function Navbar({ onMenuClick }) {
             </>
           ) : (
             <>
-              <Link to="/login" className="text-sm text-zinc-300 hover:text-zinc-100 transition-colors">
+              <Link
+                to="/login"
+                className="text-sm text-zinc-300 hover:text-zinc-100 transition-colors"
+              >
                 Login
               </Link>
               <Link

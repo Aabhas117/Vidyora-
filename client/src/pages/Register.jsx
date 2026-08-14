@@ -18,7 +18,8 @@ export default function Register() {
   const [submitting, setSubmitting] = useState(false);
   const [localError, setLocalError] = useState(null);
 
-  const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const handleChange = (e) =>
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
@@ -27,29 +28,31 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLocalError(null);
-
-    if (form.password.length < 6) {
-      setLocalError("Password must be at least 6 characters.");
-      return;
-    }
-
     setSubmitting(true);
     try {
-      await register({ ...form, avatar: avatarPreview });
+      // avatar intentionally omitted — no backend support for it yet on register
+      await register({
+        fullName: form.fullName,
+        username: form.username,
+        email: form.email,
+        password: form.password,
+      });
       navigate("/", { replace: true });
     } catch {
-      // error already set in AuthContext
+      // error surfaced via context
     } finally {
       setSubmitting(false);
     }
   };
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-zinc-950">
       <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-zinc-100 text-center mb-1">Join Vidyora</h1>
-        <p className="text-sm text-zinc-500 text-center mb-8">Create an account to get started</p>
+        <h1 className="text-2xl font-bold text-zinc-100 text-center mb-1">
+          Join Vidyora
+        </h1>
+        <p className="text-sm text-zinc-500 text-center mb-8">
+          Create an account to get started
+        </p>
 
         <form
           onSubmit={handleSubmit}
@@ -65,21 +68,56 @@ export default function Register() {
           <div className="flex items-center gap-4">
             <div className="h-14 w-14 rounded-full bg-zinc-800 border border-zinc-700 overflow-hidden flex items-center justify-center shrink-0">
               {avatarPreview ? (
-                <img src={avatarPreview} alt="Avatar preview" className="h-full w-full object-cover" />
+                <img
+                  src={avatarPreview}
+                  alt="Avatar preview"
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <Upload size={18} className="text-zinc-500" />
               )}
             </div>
             <label className="text-xs text-violet-400 hover:underline cursor-pointer">
               Upload avatar
-              <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
             </label>
           </div>
 
-          <Field label="Full Name" name="fullName" value={form.fullName} onChange={handleChange} required />
-          <Field label="Username" name="username" value={form.username} onChange={handleChange} required />
-          <Field label="Email" name="email" type="email" value={form.email} onChange={handleChange} required />
-          <Field label="Password" name="password" type="password" value={form.password} onChange={handleChange} required />
+          <Field
+            label="Full Name"
+            name="fullName"
+            value={form.fullName}
+            onChange={handleChange}
+            required
+          />
+          <Field
+            label="Username"
+            name="username"
+            value={form.username}
+            onChange={handleChange}
+            required
+          />
+          <Field
+            label="Email"
+            name="email"
+            type="email"
+            value={form.email}
+            onChange={handleChange}
+            required
+          />
+          <Field
+            label="Password"
+            name="password"
+            type="password"
+            value={form.password}
+            onChange={handleChange}
+            required
+          />
           <Field
             label="Confirm Password"
             name="confirmPassword"

@@ -1,6 +1,5 @@
 import { useParams, Link } from "react-router-dom";
 import { Users } from "lucide-react";
-import videos from "../Data/videos";
 import { getChannelById, getChannelId } from "../Data/channelUtils";
 import { useAuth } from "../Hooks/useAuth";
 import { useUserVideos } from "../Hooks/useUserVideos";
@@ -10,12 +9,14 @@ import VideoGrid from "../Components/VideoGrid";
 export default function Channel() {
   const { channelId } = useParams();
   const { user, isAuthenticated } = useAuth();
-  const { userVideos } = useUserVideos();
+   const { userVideos } = useUserVideos();
 
   const isOwnChannel = isAuthenticated && getChannelId(user.fullName) === channelId;
-  const allVideos = isOwnChannel ? [...userVideos, ...videos] : videos;
+   const allVideos = isOwnChannel ? [...userVideos, ...videos] : videos;
+   
 
-  const channel = getChannelById(channelId, allVideos);
+
+   const channel = getChannelById(channelId, allVideos);
 
   if (!channel) {
     return (

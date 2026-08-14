@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Users } from "lucide-react";
 import { useSubscriptions } from "../Hooks/useSubscriptions";
 import { getChannelId } from "../Data/channelUtils";
-import videos from "../Data/videos";
+
 import VideoGrid from "../Components/VideoGrid";
 
 export default function Subscriptions() {

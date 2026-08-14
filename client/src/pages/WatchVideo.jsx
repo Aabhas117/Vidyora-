@@ -1,36 +1,66 @@
 import { useParams, Link } from "react-router-dom";
 import { Share2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useHistory } from "../Hooks/useHistory";
-import videos from "../Data/videos";
+import { getVideoById, getVideos } from "../Services/videoService";
+import { getChannelId } from "../Data/channelUtils";
 import VideoPlayer from "../Components/VideoPlayer";
 import LikeButton from "../Components/LikeButton";
 import SubscriptionButton from "../Components/SubscriptionButton";
 import CommentList from "../Components/CommentList";
 import AddToPlaylistButton from "../Components/AddToPlaylistButton";
-import { getChannelId } from "../Data/channelUtils";
 
 export default function WatchVideo() {
   const { videoId } = useParams();
-  const video = videos.find((v) => v.id === Number(videoId));
   const { addToHistory } = useHistory();
 
+  const [video, setVideo] = useState(null);
+  const [upNext, setUpNext] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
   useEffect(() => {
-    if (video) {
-      addToHistory(video);
-    }
-  }, [video, addToHistory]);
+    let cancelled = false;
+    setLoading(true);
+    setError(false);
 
-  const upNext = videos.filter((v) => v.id !== Number(videoId));
+    getVideoById(videoId)
+      .then((data) => {
+        if (cancelled) return;
+        setVideo(data);
+        addToHistory(data); // History remains mock/localStorage this phase, unchanged
+      })
+      .catch(() => {
+        if (!cancelled) setError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-  if (!video) {
+    getVideos()
+      .then((all) => {
+        if (!cancelled) setUpNext(all.filter((v) => v.id !== videoId));
+      })
+      .catch(() => {
+        // Up Next failing silently is acceptable — it's a secondary feature;
+        // the main video/page shouldn't error out just because this did.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoId]);
+
+  if (loading) {
+    return <p className="text-sm text-zinc-500 text-center py-16">Loading video...</p>;
+  }
+
+  if (error || !video) {
     return (
       <div className="text-center py-20">
         <p className="text-zinc-400">Video not found.</p>
-        <Link
-          to="/"
-          className="text-violet-400 text-sm hover:underline mt-2 inline-block"
-        >
+        <Link to="/" className="text-violet-400 text-sm hover:underline mt-2 inline-block">
           ← Back to Home
         </Link>
       </div>
@@ -39,22 +69,15 @@ export default function WatchVideo() {
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-8">
-      {/* Player + info + description */}
       <div className="order-1 xl:order-none xl:col-start-1 xl:row-start-1">
         <VideoPlayer src={video.videoUrl} poster={video.thumbnail} />
 
-        <h1 className="text-lg font-semibold text-zinc-100 mt-4">
-          {video.title}
-        </h1>
+        <h1 className="text-lg font-semibold text-zinc-100 mt-4">{video.title}</h1>
 
         <div className="flex flex-wrap items-center justify-between gap-4 mt-3">
           <div className="flex items-center gap-3">
             <Link to={`/channel/${getChannelId(video.channel)}`}>
-              <img
-                src={video.avatar}
-                alt={video.channel}
-                className="h-11 w-11 rounded-full bg-zinc-800"
-              />
+              <img src={video.avatar} alt={video.channel} className="h-11 w-11 rounded-full bg-zinc-800" />
             </Link>
             <div>
               <Link
@@ -68,11 +91,7 @@ export default function WatchVideo() {
               </p>
             </div>
             <SubscriptionButton
-              channel={{
-                id: getChannelId(video.channel),
-                name: video.channel,
-                avatar: video.avatar,
-              }}
+              channel={{ id: getChannelId(video.channel), name: video.channel, avatar: video.avatar }}
             />
           </div>
 
@@ -86,13 +105,10 @@ export default function WatchVideo() {
         </div>
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 mt-4">
-          <p className="text-sm text-zinc-300 whitespace-pre-line">
-            {video.description}
-          </p>
+          <p className="text-sm text-zinc-300 whitespace-pre-line">{video.description}</p>
         </div>
       </div>
 
-      {/* Up Next */}
       <div className="order-2 xl:order-none xl:col-start-2 xl:row-start-1 xl:row-span-2">
         <h2 className="text-sm font-semibold text-zinc-400 mb-4">Up Next</h2>
         <div className="flex flex-col gap-4">
@@ -114,10 +130,10 @@ export default function WatchVideo() {
               </div>
             </Link>
           ))}
+          {upNext.length === 0 && <p className="text-xs text-zinc-600">Nothing to suggest yet.</p>}
         </div>
       </div>
 
-      {/* Comments */}
       <div className="order-3 xl:order-none xl:col-start-1 xl:row-start-2 border-t border-zinc-800 pt-6 mt-2">
         <CommentList />
       </div>

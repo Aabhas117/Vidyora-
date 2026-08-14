@@ -7,10 +7,12 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [form, setForm] = useState({ identifier: "", password: "" });
+  // const [form, setForm] = useState({ identifier: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [submitting, setSubmitting] = useState(false);
 
-  const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const handleChange = (e) =>
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,8 +31,12 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-zinc-950">
       <div className="w-full max-w-sm">
-        <h1 className="text-2xl font-bold text-zinc-100 text-center mb-1">Welcome back</h1>
-        <p className="text-sm text-zinc-500 text-center mb-8">Sign in to continue to Vidyora</p>
+        <h1 className="text-2xl font-bold text-zinc-100 text-center mb-1">
+          Welcome back
+        </h1>
+        <p className="text-sm text-zinc-500 text-center mb-8">
+          Sign in to continue to Vidyora
+        </p>
 
         <form
           onSubmit={handleSubmit}
@@ -43,11 +49,12 @@ export default function Login() {
           )}
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs text-zinc-400">Email or Username</span>
+            <span className="text-xs text-zinc-400">Email</span>
             <input
-              name="identifier"
+              name="email"
+              type="email"
               required
-              value={form.identifier}
+              value={form.email}
               onChange={handleChange}
               className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-violet-500"
             />

@@ -35,12 +35,17 @@ const videoRoutes = require("./routes/video.routes");
 const likeRoutes = require("./routes/like.routes");
 const commentRoutes = require("./routes/comment.routes");
 const historyRoutes = require("./routes/history.routes");
+const playlistRoutes = require("./routes/playlist.routes");
+const subscriptionRoutes = require("./routes/subscription.routes");
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/videos", videoRoutes);
 app.use("/api/v1/likes", likeRoutes);
 app.use("/api/v1/comments", commentRoutes);
 app.use("/api/v1/history", historyRoutes);
+app.use("/api/v1/playlists", playlistRoutes);
+app.use("/api/v1/subscriptions", subscriptionRoutes);
+
 // Routes will be registered here as they're built, e.g.:
 // app.use("/api/v1/auth", require("./routes/auth.routes"));
 

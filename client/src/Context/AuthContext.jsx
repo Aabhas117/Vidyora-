@@ -1,116 +1,83 @@
-import { createContext, useState, useEffect } from "react";
+import { createContext, useState, useEffect, useCallback } from "react";
+import { authAPI } from "../Services/api";
 
 export const AuthContext = createContext(null);
-
-// Two separate localStorage keys, on purpose:
-// USERS_KEY  = a mock "database" of everyone who has ever registered.
-// SESSION_KEY = which one of them is currently logged in on this browser.
-const USERS_KEY = "vidyora_users";
-const SESSION_KEY = "vidyora_session";
-
-function getStoredUsers() {
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY)) || [];
-  } catch {
-    return [];
-  }
-}
-
-function saveStoredUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // On first load, restore whoever was logged in before a refresh.
+  // On app start, ask the backend "who am I?" using the HTTP-only cookie.
+  // A 401 here just means "not logged in" — not a fatal error.
   useEffect(() => {
-    const saved = localStorage.getItem(SESSION_KEY);
-    if (saved) {
-      try {
-        setUser(JSON.parse(saved));
-      } catch {
-        localStorage.removeItem(SESSION_KEY);
-      }
-    }
-    setLoading(false);
+    let cancelled = false;
+
+    authAPI
+      .getMe()
+      .then((res) => {
+        if (!cancelled) setUser(res.data.user);
+      })
+      .catch(() => {
+        if (!cancelled) setUser(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  /**
-   * MOCK register.
-   * Later this becomes:
-   *   const res = await api.post("/auth/register", details);
-   *   setUser(res.data.user);
-   * Nothing outside this function needs to change when that happens —
-   * every component just calls register(details) and reacts to success/failure.
-   */
-  const register = async ({ fullName, username, email, password, confirmPassword, avatar }) => {
+  const register = useCallback(async ({ fullName, username, email, password }) => {
     setError(null);
-
-    if (password !== confirmPassword) {
-      const msg = "Passwords don't match.";
-      setError(msg);
-      throw new Error(msg);
+    try {
+      await authAPI.register({ fullName, username, email, password });
+      // The backend's register endpoint doesn't issue a session on its own —
+      // log in immediately afterward with the same credentials so the
+      // existing "auto-login after registration" UX still works.
+      const loginRes = await authAPI.login({ email, password });
+      setUser(loginRes.data.user);
+      return loginRes.data.user;
+    } catch (err) {
+      const message = err.response?.data?.message || "Couldn't create your account. Try again.";
+      setError(message);
+      throw new Error(message);
     }
+  }, []);
 
-    const users = getStoredUsers();
-    if (users.some((u) => u.email === email || u.username === username)) {
-      const msg = "An account with that email or username already exists.";
-      setError(msg);
-      throw new Error(msg);
-    }
-
-    const newUser = {
-      id: Date.now(),
-      fullName,
-      username,
-      email,
-      password, // mock only — a real backend would hash this and never send it back
-      avatar: avatar || `https://i.pravatar.cc/150?u=${username}`,
-      videos: 0,
-      subscribers: 0,
-    };
-
-    saveStoredUsers([...users, newUser]);
-
-    const { password: _pw, ...safeUser } = newUser;
-    localStorage.setItem(SESSION_KEY, JSON.stringify(safeUser));
-    setUser(safeUser);
-    return safeUser;
-  };
-
-  /**
-   * MOCK login.
-   * Later this becomes:
-   *   const res = await api.post("/auth/login", credentials);
-   *   setUser(res.data.user);
-   */
-  const login = async ({ identifier, password }) => {
+  const login = useCallback(async ({ email, password }) => {
     setError(null);
-    const users = getStoredUsers();
-    const found = users.find(
-      (u) => (u.email === identifier || u.username === identifier) && u.password === password
-    );
-
-    if (!found) {
-      const msg = "Incorrect email/username or password.";
-      setError(msg);
-      throw new Error(msg);
+    try {
+      const res = await authAPI.login({ email, password });
+      setUser(res.data.user);
+      return res.data.user;
+    } catch (err) {
+      const message = err.response?.data?.message || "Incorrect email or password.";
+      setError(message);
+      throw new Error(message);
     }
+  }, []);
 
-    const { password: _pw, ...safeUser } = found;
-    localStorage.setItem(SESSION_KEY, JSON.stringify(safeUser));
-    setUser(safeUser);
-    return safeUser;
-  };
-
-  const logout = () => {
-    // Later: also call `api.post("/auth/logout")` to invalidate the token server-side.
-    localStorage.removeItem(SESSION_KEY);
+  const logout = useCallback(async () => {
+    try {
+      await authAPI.logout();
+    } catch {
+      // Even if the request fails, clear local state so the UI doesn't
+      // stay stuck showing a logged-in user.
+    }
     setUser(null);
-  };
+  }, []);
+
+  // TEMPORARY: no backend PATCH /users/me endpoint exists yet, so this only
+  // updates in-memory state for the current session — it does NOT persist,
+  // and will revert on refresh. This will be replaced once that endpoint
+  // is built in a future phase. Profile.jsx itself needs no changes for
+  // this — it already just calls updateProfile(updates).
+  const updateProfile = useCallback((updates) => {
+    setUser((prev) => ({ ...prev, ...updates }));
+  }, []);
 
   const value = {
     user,
@@ -120,6 +87,8 @@ export function AuthProvider({ children }) {
     login,
     register,
     logout,
+    updateProfile,
+    setUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

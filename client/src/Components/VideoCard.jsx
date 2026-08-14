@@ -18,7 +18,17 @@ export default function VideoCard({ video }) {
 
       <div className="flex gap-3 mt-3">
         <Link to={`/channel/${getChannelId(channel)}`}>
-          <img src={avatar} alt={channel} className="h-9 w-9 rounded-full shrink-0 bg-zinc-800" />
+          {avatar ? (
+            <img
+              src={avatar}
+              alt={channel}
+              className="h-9 w-9 rounded-full shrink-0 bg-zinc-800"
+            />
+          ) : (
+            <div className="h-9 w-9 rounded-full shrink-0 bg-zinc-800 flex items-center justify-center text-xs text-violet-400">
+              {channel?.[0]?.toUpperCase() || "?"}
+            </div>
+          )}
         </Link>
         <div className="min-w-0">
           <Link to={`/watch/${id}`}>
