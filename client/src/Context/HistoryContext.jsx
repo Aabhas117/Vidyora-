@@ -11,7 +11,7 @@ export function HistoryProvider({ children }) {
   // Reload history whenever who's logged in changes (login, logout, or a different account logs in).
   useEffect(() => {
     if (isAuthenticated && user) {
-      setHistory(loadHistory(user.id));
+      setHistory(loadHistory(user._id));
     } else {
       setHistory([]);
     }
@@ -28,7 +28,7 @@ export function HistoryProvider({ children }) {
         const withoutDuplicate = prev.filter((entry) => entry.id !== video.id);
         const newEntry = { ...video, watchedAt: new Date().toISOString() };
         const next = [newEntry, ...withoutDuplicate];
-        saveHistory(user.id, next);
+        saveHistory(user._id, next);
         return next;
       });
     },
@@ -40,7 +40,7 @@ export function HistoryProvider({ children }) {
       if (!user) return;
       setHistory((prev) => {
         const next = prev.filter((entry) => entry.id !== videoId);
-        saveHistory(user.id, next);
+        saveHistory(user._id, next);
         return next;
       });
     },
@@ -50,7 +50,7 @@ export function HistoryProvider({ children }) {
   const clearHistory = useCallback(() => {
     if (!user) return;
     setHistory([]);
-    saveHistory(user.id, []);
+    saveHistory(user._id, []);
   }, [user]);
 
   const value = { history, addToHistory, removeFromHistory, clearHistory };

@@ -9,6 +9,7 @@ import LikeButton from "../Components/LikeButton";
 import SubscriptionButton from "../Components/SubscriptionButton";
 import CommentList from "../Components/CommentList";
 import AddToPlaylistButton from "../Components/AddToPlaylistButton";
+import Avatar from "../Components/Avatar";
 
 export default function WatchVideo() {
   const { videoId } = useParams();
@@ -53,14 +54,21 @@ export default function WatchVideo() {
   }, [videoId]);
 
   if (loading) {
-    return <p className="text-sm text-zinc-500 text-center py-16">Loading video...</p>;
+    return (
+      <p className="text-sm text-zinc-500 text-center py-16">
+        Loading video...
+      </p>
+    );
   }
 
   if (error || !video) {
     return (
       <div className="text-center py-20">
         <p className="text-zinc-400">Video not found.</p>
-        <Link to="/" className="text-violet-400 text-sm hover:underline mt-2 inline-block">
+        <Link
+          to="/"
+          className="text-violet-400 text-sm hover:underline mt-2 inline-block"
+        >
           ← Back to Home
         </Link>
       </div>
@@ -72,12 +80,18 @@ export default function WatchVideo() {
       <div className="order-1 xl:order-none xl:col-start-1 xl:row-start-1">
         <VideoPlayer src={video.videoUrl} poster={video.thumbnail} />
 
-        <h1 className="text-lg font-semibold text-zinc-100 mt-4">{video.title}</h1>
+        <h1 className="text-lg font-semibold text-zinc-100 mt-4">
+          {video.title}
+        </h1>
 
         <div className="flex flex-wrap items-center justify-between gap-4 mt-3">
           <div className="flex items-center gap-3">
             <Link to={`/channel/${getChannelId(video.channel)}`}>
-              <img src={video.avatar} alt={video.channel} className="h-11 w-11 rounded-full bg-zinc-800" />
+              <Avatar
+                src={video.avatar}
+                name={video.channel}
+                className="h-11 w-11"
+              />
             </Link>
             <div>
               <Link
@@ -91,7 +105,11 @@ export default function WatchVideo() {
               </p>
             </div>
             <SubscriptionButton
-              channel={{ id: getChannelId(video.channel), name: video.channel, avatar: video.avatar }}
+              channel={{
+                id: video.ownerId,
+                name: video.channel,
+                avatar: video.avatar,
+              }}
             />
           </div>
 
@@ -105,7 +123,9 @@ export default function WatchVideo() {
         </div>
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 mt-4">
-          <p className="text-sm text-zinc-300 whitespace-pre-line">{video.description}</p>
+          <p className="text-sm text-zinc-300 whitespace-pre-line">
+            {video.description}
+          </p>
         </div>
       </div>
 
@@ -130,7 +150,9 @@ export default function WatchVideo() {
               </div>
             </Link>
           ))}
-          {upNext.length === 0 && <p className="text-xs text-zinc-600">Nothing to suggest yet.</p>}
+          {upNext.length === 0 && (
+            <p className="text-xs text-zinc-600">Nothing to suggest yet.</p>
+          )}
         </div>
       </div>
 

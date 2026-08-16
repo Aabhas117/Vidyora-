@@ -99,7 +99,7 @@ async function getVideoComments(req, res) {
     return res.status(200).json({ comments: structured });
   } catch (error) {
     console.error("Get video comments error:", error.message);
-    return res.status(500).json({ message: "Something went wrong. Please try again." });
+    return res.status(500).json({ message: "Something went wrong. Please try again."});
   }
 }
 
@@ -122,7 +122,7 @@ async function updateComment(req, res) {
     }
 
     if (!text || !text.trim()) {
-      return res.status(400).json({ message: "Comment text is required." });
+      return res.status(400).json({ message: "Comment text is required."});
     }
     if (text.trim().length > MAX_COMMENT_LENGTH) {
       return res.status(400).json({ message: `Comment must be under ${MAX_COMMENT_LENGTH} characters.` });

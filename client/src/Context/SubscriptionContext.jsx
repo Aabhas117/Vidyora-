@@ -10,7 +10,7 @@ export function SubscriptionProvider({ children }) {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      setSubscriptions(loadSubscriptions(user.id));
+      setSubscriptions(loadSubscriptions(user._id));
     } else {
       setSubscriptions([]);
     }
@@ -27,7 +27,7 @@ export function SubscriptionProvider({ children }) {
       setSubscriptions((prev) => {
         if (prev.some((c) => c.id === channel.id)) return prev; // no duplicates
         const next = [{ id: channel.id, name: channel.name, avatar: channel.avatar }, ...prev];
-        saveSubscriptions(user.id, next);
+        saveSubscriptions(user._id, next);
         return next;
       });
     },
@@ -39,7 +39,7 @@ export function SubscriptionProvider({ children }) {
       if (!user) return;
       setSubscriptions((prev) => {
         const next = prev.filter((c) => c.id !== channelId);
-        saveSubscriptions(user.id, next);
+        saveSubscriptions(user._id, next);
         return next;
       });
     },

@@ -13,7 +13,7 @@ export function PlaylistProvider({ children }) {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      setPlaylists(loadPlaylists(user.id));
+      setPlaylists(loadPlaylists(user._id));
     } else {
       setPlaylists([]);
     }
@@ -26,14 +26,14 @@ export function PlaylistProvider({ children }) {
         id: Date.now(),
         name: name.trim().slice(0, NAME_LIMIT),
         description: description.trim().slice(0, DESCRIPTION_LIMIT),
-        ownerId: user.id,
+        ownerId: user._id,
         videos: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
       setPlaylists((prev) => {
         const next = [newPlaylist, ...prev];
-        savePlaylists(user.id, next);
+        savePlaylists(user._id, next);
         return next;
       });
       return newPlaylist;
@@ -46,7 +46,7 @@ export function PlaylistProvider({ children }) {
       if (!user) return;
       setPlaylists((prev) => {
         const next = prev.filter((p) => p.id !== playlistId);
-        savePlaylists(user.id, next);
+        savePlaylists(user._id, next);
         return next;
       });
     },
@@ -70,7 +70,7 @@ export function PlaylistProvider({ children }) {
               }
             : p
         );
-        savePlaylists(user.id, next);
+        savePlaylists(user._id, next);
         return next;
       });
     },
@@ -87,7 +87,7 @@ export function PlaylistProvider({ children }) {
           if (alreadyIn) return p; // no duplicates
           return { ...p, videos: [video, ...p.videos], updatedAt: new Date().toISOString() };
         });
-        savePlaylists(user.id, next);
+        savePlaylists(user._id, next);
         return next;
       });
     },
@@ -103,7 +103,7 @@ export function PlaylistProvider({ children }) {
             ? { ...p, videos: p.videos.filter((v) => v.id !== videoId), updatedAt: new Date().toISOString() }
             : p
         );
-        savePlaylists(user.id, next);
+        savePlaylists(user._id, next);
         return next;
       });
     },

@@ -10,7 +10,7 @@ export function LikeProvider({ children }) {
   // Reload liked videos whenever who's logged in changes.
   useEffect(() => {
     if (isAuthenticated && user) {
-      setLikedVideos(loadLikes(user.id));
+      setLikedVideos(loadLikes(user._id));
     } else {
       setLikedVideos([]);
     }
@@ -30,7 +30,7 @@ export function LikeProvider({ children }) {
         const next = alreadyLiked
           ? prev.filter((v) => v.id !== video.id) // unlike
           : [{ ...video, likedAt: new Date().toISOString() }, ...prev]; // like — prepend, no duplicate possible since we just filtered it out
-        saveLikes(user.id, next);
+        saveLikes(user._id, next);
         return next;
       });
       return true;
@@ -43,7 +43,7 @@ export function LikeProvider({ children }) {
       if (!user) return;
       setLikedVideos((prev) => {
         const next = prev.filter((v) => v.id !== videoId);
-        saveLikes(user.id, next);
+        saveLikes(user._id, next);
         return next;
       });
     },
@@ -53,7 +53,7 @@ export function LikeProvider({ children }) {
   const clearLikedVideos = useCallback(() => {
     if (!user) return;
     setLikedVideos([]);
-    saveLikes(user.id, []);
+    saveLikes(user._id, []);
   }, [user]);
 
   const value = { likedVideos, isLiked, toggleLike, removeLike, clearLikedVideos };

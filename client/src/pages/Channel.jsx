@@ -1,24 +1,68 @@
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Users } from "lucide-react";
-import { getChannelById, getChannelId } from "../Data/channelUtils";
 import { useAuth } from "../Hooks/useAuth";
 import { useUserVideos } from "../Hooks/useUserVideos";
+import { getVideos } from "../Services/videoService";
 import SubscriptionButton from "../Components/SubscriptionButton";
 import VideoGrid from "../Components/VideoGrid";
 
 export default function Channel() {
   const { channelId } = useParams();
   const { user, isAuthenticated } = useAuth();
-   const { userVideos } = useUserVideos();
+  const { userVideos } = useUserVideos();
 
-  const isOwnChannel = isAuthenticated && getChannelId(user.fullName) === channelId;
-   const allVideos = isOwnChannel ? [...userVideos, ...videos] : videos;
-   
+  const [allVideos, setAllVideos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(false);
 
-   const channel = getChannelById(channelId, allVideos);
+    getVideos()
+      .then((data) => {
+        if (!cancelled) setAllVideos(data);
+      })
+      .catch(() => {
+        if (!cancelled) setError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
-  if (!channel) {
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const isOwnChannel = isAuthenticated && user._id === channelId;
+
+  // Mock-uploaded videos (from the still-mock Upload flow) don't have a real
+  // ownerId yet, so they're tagged with the current user's real ID here so
+  // they line up correctly when viewing your own channel.
+  const taggedUserVideos = userVideos.map((v) => ({ ...v, ownerId: user?._id }));
+
+  const combinedVideos = isOwnChannel ? [...taggedUserVideos, ...allVideos] : allVideos;
+  const channelVideos = combinedVideos.filter((v) => v.ownerId === channelId);
+
+  if (loading) {
+    return <p className="text-sm text-zinc-500 text-center py-16">Loading channel...</p>;
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-zinc-400">Couldn't load this channel.</p>
+        <Link to="/" className="text-violet-400 text-sm hover:underline mt-2 inline-block">
+          ← Back to Home
+        </Link>
+      </div>
+    );
+  }
+
+  if (channelVideos.length === 0) {
     return (
       <div className="text-center py-20">
         <p className="text-zinc-400">Channel not found.</p>
@@ -28,6 +72,17 @@ export default function Channel() {
       </div>
     );
   }
+
+  // Channel identity (name/avatar) is derived from its videos, since there's
+  // no dedicated "channel" resource yet — same approach as before, just now
+  // built from real video data instead of the dummy array.
+  const channel = {
+    id: channelId,
+    name: channelVideos[0].channel,
+    avatar: channelVideos[0].avatar,
+    description: `${channelVideos[0].channel} on Vidyora.`,
+    videos: channelVideos,
+  };
 
   return (
     <div className="max-w-4xl">

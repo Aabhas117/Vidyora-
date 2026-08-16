@@ -111,9 +111,7 @@ async function loginUser(req, res) {
     const token = generateToken(user._id);
     setAuthCookie(res, token);
 
-    const logUser = toSafeUser(user);
-
-    return res.status(200).json({ ...logUser,  token });
+    return res.status(200).json({ user: toSafeUser(user) });
   } catch (error) {
     console.error("Login error:", error.message);
     return res.status(500).json({ message: "Something went wrong. Please try again." });
