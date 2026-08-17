@@ -81,13 +81,10 @@ async function getMyLikes(req, res) {
 async function getLikeStatus(req, res) {
   try {
     const { videoId } = req.params;
-
     if (!mongoose.Types.ObjectId.isValid(videoId)) {
       return res.status(400).json({ message: "Invalid video ID." });
     }
-
     const like = await Like.findOne({ user: req.user._id, video: videoId });
-
     return res.status(200).json({ liked: !!like });
   } catch (error) {
     console.error("Get like status error:", error.message);
