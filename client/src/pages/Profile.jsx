@@ -19,12 +19,13 @@ export default function Profile() {
     username: user.username,
     email: user.email,
   });
-  const [avatarFile, setAvatarFile] = useState(null);
+  const [ setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(user.avatar);
   const [errors, setErrors] = useState({});
   const [editingVideo, setEditingVideo] = useState(null);
 
-  const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const handleChange = (e) =>
+    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
@@ -50,7 +51,11 @@ export default function Profile() {
   };
 
   const handleCancel = () => {
-    setForm({ fullName: user.fullName, username: user.username, email: user.email });
+    setForm({
+      fullName: user.fullName,
+      username: user.username,
+      email: user.email,
+    });
     setAvatarPreview(user.avatar);
     setAvatarFile(null);
     setErrors({});
@@ -71,10 +76,17 @@ export default function Profile() {
                 />
                 <label className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-violet-500 flex items-center justify-center cursor-pointer hover:bg-violet-400 transition-colors">
                   <Camera size={13} className="text-white" />
-                  <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                  />
                 </label>
               </div>
-              <p className="text-xs text-zinc-500">Click the camera icon to change your avatar.</p>
+              <p className="text-xs text-zinc-500">
+                Click the camera icon to change your avatar.
+              </p>
             </div>
 
             <label className="flex flex-col gap-1.5">
@@ -84,10 +96,14 @@ export default function Profile() {
                 value={form.fullName}
                 onChange={handleChange}
                 className={`bg-zinc-950 border rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none ${
-                  errors.fullName ? "border-red-500/60" : "border-zinc-800 focus:border-violet-500"
+                  errors.fullName
+                    ? "border-red-500/60"
+                    : "border-zinc-800 focus:border-violet-500"
                 }`}
               />
-              {errors.fullName && <p className="text-xs text-red-400">{errors.fullName}</p>}
+              {errors.fullName && (
+                <p className="text-xs text-red-400">{errors.fullName}</p>
+              )}
             </label>
 
             <label className="flex flex-col gap-1.5">
@@ -97,10 +113,14 @@ export default function Profile() {
                 value={form.username}
                 onChange={handleChange}
                 className={`bg-zinc-950 border rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none ${
-                  errors.username ? "border-red-500/60" : "border-zinc-800 focus:border-violet-500"
+                  errors.username
+                    ? "border-red-500/60"
+                    : "border-zinc-800 focus:border-violet-500"
                 }`}
               />
-              {errors.username && <p className="text-xs text-red-400">{errors.username}</p>}
+              {errors.username && (
+                <p className="text-xs text-red-400">{errors.username}</p>
+              )}
             </label>
 
             <label className="flex flex-col gap-1.5">
@@ -111,10 +131,14 @@ export default function Profile() {
                 value={form.email}
                 onChange={handleChange}
                 className={`bg-zinc-950 border rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none ${
-                  errors.email ? "border-red-500/60" : "border-zinc-800 focus:border-violet-500"
+                  errors.email
+                    ? "border-red-500/60"
+                    : "border-zinc-800 focus:border-violet-500"
                 }`}
               />
-              {errors.email && <p className="text-xs text-red-400">{errors.email}</p>}
+              {errors.email && (
+                <p className="text-xs text-red-400">{errors.email}</p>
+              )}
             </label>
 
             <div className="flex gap-2 justify-end mt-2">
@@ -142,7 +166,9 @@ export default function Profile() {
                 className="h-20 w-20 rounded-full object-cover bg-zinc-800 border border-zinc-700"
               />
               <div>
-                <h1 className="text-lg font-semibold text-zinc-100">{user.fullName}</h1>
+                <h1 className="text-lg font-semibold text-zinc-100">
+                  {user.fullName}
+                </h1>
                 <p className="text-sm text-zinc-500">@{user.username}</p>
                 <p className="text-sm text-zinc-500">{user.email}</p>
               </div>
@@ -150,16 +176,29 @@ export default function Profile() {
 
             <div className="flex gap-8 mt-6 pt-6 border-t border-zinc-800">
               <div>
-                <p className="text-lg font-semibold text-zinc-100">{userVideos.length}</p>
+                <p className="text-lg font-semibold text-zinc-100">
+                  {userVideos.length}
+                </p>
                 <p className="text-xs text-zinc-500">Videos</p>
               </div>
               <div>
-                <p className="text-lg font-semibold text-zinc-100">{user.subscribers ?? 0}</p>
-                <p className="text-xs text-zinc-500">Subscribers <span className="text-zinc-600">(mock)</span></p>
+                <p className="text-lg font-semibold text-zinc-100">
+                  {user.subscribers ?? 0}
+                </p>
+                <p className="text-xs text-zinc-500">
+                  Subscribers <span className="text-zinc-600">(mock)</span>
+                </p>
               </div>
-              <button onClick={() => navigate("/subscriptions")} className="text-left">
-                <p className="text-lg font-semibold text-zinc-100">{subscriptions.length}</p>
-                <p className="text-xs text-zinc-500 hover:text-violet-400 transition-colors">Subscriptions →</p>
+              <button
+                onClick={() => navigate("/subscriptions")}
+                className="text-left"
+              >
+                <p className="text-lg font-semibold text-zinc-100">
+                  {subscriptions.length}
+                </p>
+                <p className="text-xs text-zinc-500 hover:text-violet-400 transition-colors">
+                  Subscriptions →
+                </p>
               </button>
             </div>
 
@@ -178,7 +217,10 @@ export default function Profile() {
         {userVideos.length === 0 ? (
           <p className="text-sm text-zinc-500">
             You haven't uploaded any videos yet.{" "}
-            <button onClick={() => navigate("/upload")} className="text-violet-400 hover:underline">
+            <button
+              onClick={() => navigate("/upload")}
+              className="text-violet-400 hover:underline"
+            >
               Upload one
             </button>
             .

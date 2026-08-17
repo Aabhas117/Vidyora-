@@ -4,7 +4,6 @@ import { AuthProvider } from "./Context/AuthContext";
 import Navbar from "./Components/Navbar";
 import Sidebar from "./Components/Sidebar";
 import ProtectedRoute from "./Components/ProtectedRoute";
-
 import Home from "./pages/Home";
 import WatchVideo from "./pages/WatchVideo";
 import Search from "./pages/Search";
