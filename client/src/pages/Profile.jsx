@@ -19,7 +19,7 @@ export default function Profile() {
     username: user.username,
     email: user.email,
   });
-  const [ setAvatarFile] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(user.avatar);
   const [errors, setErrors] = useState({});
   const [editingVideo, setEditingVideo] = useState(null);

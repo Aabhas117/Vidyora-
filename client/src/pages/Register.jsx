@@ -16,7 +16,7 @@ export default function Register() {
   });
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [localError ] = useState(null);
+  // const [localError ] = useState(null);
 
   const handleChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));

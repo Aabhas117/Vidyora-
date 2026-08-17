@@ -37,7 +37,7 @@ export default function Channel() {
     };
   }, []);
 
-  const isOwnChannel = isAuthenticated && user._id === channelId;
+  const isOwnChannel = isAuthenticated && user._id.toString()  === channelId;
 
   // Mock-uploaded videos (from the still-mock Upload flow) don't have a real
   // ownerId yet, so they're tagged with the current user's real ID here so
