@@ -19,7 +19,6 @@ export default function Profile() {
     username: user.username,
     email: user.email,
   });
-  const [avatarFile, setAvatarFile] = useState(null);
   const [avatarPreview, setAvatarPreview] = useState(user.avatar);
   const [errors, setErrors] = useState({});
   const [editingVideo, setEditingVideo] = useState(null);
@@ -30,7 +29,6 @@ export default function Profile() {
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
   };
 
@@ -57,7 +55,6 @@ export default function Profile() {
       email: user.email,
     });
     setAvatarPreview(user.avatar);
-    setAvatarFile(null);
     setErrors({});
     setEditing(false);
   };
