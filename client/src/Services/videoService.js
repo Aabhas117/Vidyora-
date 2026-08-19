@@ -1,12 +1,16 @@
 import api from "./api";
 import { mapVideo, mapVideos } from "../Utils/videoMapper";
 
-export async function getVideos() {
+// Get all videos
+export const getVideos = async () => {
   const res = await api.get("/videos");
-  return mapVideos(res.data.videos);
-}
 
-export async function getVideoById(id) {
+  return mapVideos(res.data.videos || res.data);
+};
+
+// Get one video
+export const getVideoById = async (id) => {
   const res = await api.get(`/videos/${id}`);
-  return mapVideo(res.data.video);
-}
+
+  return mapVideo(res.data.video || res.data);
+};
