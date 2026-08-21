@@ -86,6 +86,8 @@ export default function Profile() {
   // real PATCH/DELETE wiring for these video-card actions is a separate,
   // not-yet-done piece (the backend PATCH/DELETE /videos/:id routes exist,
   // but this page doesn't call them yet).
+
+  
   const handleDeleteVideo = (videoId) => {
     setMyVideos((prev) => prev.filter((v) => v.id !== videoId));
   };
