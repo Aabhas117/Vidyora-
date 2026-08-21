@@ -121,6 +121,26 @@ The backend health endpoint is:
 http://localhost:8000/api/health
 ```
 
+## Video Upload and Profile Flow
+
+Authenticated users can publish a video from the upload page. The client sends a
+`multipart/form-data` request to `POST /api/v1/videos` with these fields:
+
+- `title`
+- `description`
+- `category`
+- `video`
+- `thumbnail`
+
+The server uploads both files to Cloudinary, stores the video metadata in
+MongoDB, and returns the saved video with permanent media URLs. The profile
+video list is provided by `GET /api/v1/videos/my`. Video owners can update or
+delete their videos through `PATCH /api/v1/videos/:id` and
+`DELETE /api/v1/videos/:id`.
+
+Upload and video-management requests require the HTTP-only authentication
+cookie created during login.
+
 ## Useful Client Commands
 
 Run these commands from `client/`:
