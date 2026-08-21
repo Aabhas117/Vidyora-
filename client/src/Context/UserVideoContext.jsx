@@ -10,7 +10,7 @@ export function UserVideoProvider({ children }) {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      setUserVideos(loadUserVideos(user.id));
+      setUserVideos(loadUserVideos(user._id));
     } else {
       setUserVideos([]);
     }
@@ -21,7 +21,7 @@ export function UserVideoProvider({ children }) {
       if (!user) return;
       setUserVideos((prev) => {
         const next = [video, ...prev];
-        saveUserVideos(user.id, next);
+        saveUserVideos(user._id, next);
         return next;
       });
     },
@@ -33,7 +33,7 @@ export function UserVideoProvider({ children }) {
       if (!user) return;
       setUserVideos((prev) => {
         const next = prev.map((v) => (v.id === videoId ? { ...v, ...patch } : v));
-        saveUserVideos(user.id, next);
+        saveUserVideos(user._id, next);
         return next;
       });
     },
@@ -45,7 +45,7 @@ export function UserVideoProvider({ children }) {
       if (!user) return;
       setUserVideos((prev) => {
         const next = prev.filter((v) => v.id !== videoId);
-        saveUserVideos(user.id, next);
+        saveUserVideos(user._id, next);
         return next;
       });
     },

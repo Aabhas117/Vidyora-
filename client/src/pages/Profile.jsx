@@ -6,6 +6,7 @@ import { useUserVideos } from "../Hooks/useUserVideos";
 import { useSubscriptions } from "../Hooks/useSubscriptions";
 import ProfileVideoCard from "../Components/ProfileVideoCard";
 import EditVideoModal from "../Components/EditVideoModal";
+import Avatar from "../Components/Avatar";
 
 export default function Profile() {
   const { user, updateProfile } = useAuth();
@@ -66,10 +67,10 @@ export default function Profile() {
           <form onSubmit={handleSave} className="flex flex-col gap-4">
             <div className="flex items-center gap-4">
               <div className="relative">
-                <img
+                <Avatar
                   src={avatarPreview}
-                  alt={form.fullName}
-                  className="h-20 w-20 rounded-full object-cover bg-zinc-800 border border-zinc-700"
+                  name={form.fullName}
+                  className="h-20 w-20"
                 />
                 <label className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-violet-500 flex items-center justify-center cursor-pointer hover:bg-violet-400 transition-colors">
                   <Camera size={13} className="text-white" />
@@ -157,10 +158,10 @@ export default function Profile() {
         ) : (
           <>
             <div className="flex items-center gap-4">
-              <img
+              <Avatar
                 src={user.avatar}
-                alt={user.fullName}
-                className="h-20 w-20 rounded-full object-cover bg-zinc-800 border border-zinc-700"
+                name={user.fullName}
+                className="h-20 w-20"
               />
               <div>
                 <h1 className="text-lg font-semibold text-zinc-100">

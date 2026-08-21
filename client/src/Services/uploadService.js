@@ -1,50 +1,34 @@
+import api from "./api";
+import { mapVideo } from "../Utils/videoMapper";
+
 /**
- * MOCK upload service — no backend yet.
+ * Uploads a video to the real backend.
  *
- * Later this becomes:
- *   const formData = new FormData();
- *   formData.append("video", videoFile);
- *   formData.append("thumbnail", thumbnailFile);
- *   formData.append("title", title);
- *   ...
- *   const res = await axios.post("/api/v1/videos", formData, {
- *     headers: { "Content-Type": "multipart/form-data" },
- *     onUploadProgress: (e) => onProgress(Math.round((e.loaded / e.total) * 100)),
- *   });
- *   return res.data.video;
+ * POST /api/v1/videos (multipart/form-data)
+ * Fields: title, description, category (text) + video, thumbnail (files)
  *
- * UpLoadVideo.jsx never needs to change when that happens — it only calls
- * uploadVideo(payload, onProgress) and reacts to success/failure.
+ * Do NOT set Content-Type manually — the browser generates the correct
+ * multipart boundary automatically when FormData is passed as the body.
  */
-export function uploadVideo({ videoFile, thumbnailFile, title, description, category, visibility }, onProgress) {
-  return new Promise((resolve, reject) => {
-    if (!videoFile || !thumbnailFile) {
-      reject(new Error("Video and thumbnail are required."));
-      return;
-    }
+export async function uploadVideo({ videoFile, thumbnailFile, title, description, category }, onProgress) {
+  if (!videoFile || !thumbnailFile) {
+    throw new Error("Video and thumbnail are required.");
+  }
 
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 20 + 10;
-      if (progress >= 100) {
-        progress = 100;
-        onProgress(progress);
-        clearInterval(interval);
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("description", description || "");
+  formData.append("category", category);
+  formData.append("video", videoFile);
+  formData.append("thumbnail", thumbnailFile);
 
-        setTimeout(() => {
-          resolve({
-            id: Date.now(),
-            title,
-            description,
-            category,
-            visibility,
-            thumbnail: URL.createObjectURL(thumbnailFile),
-            videoUrl: URL.createObjectURL(videoFile),
-          });
-        }, 400);
-      } else {
-        onProgress(Math.round(progress));
+  const res = await api.post("/videos", formData, {
+    onUploadProgress: (event) => {
+      if (event.total && onProgress) {
+        onProgress(Math.round((event.loaded / event.total) * 100));
       }
-    }, 300);
+    },
   });
+
+  return mapVideo(res.data.video);
 }

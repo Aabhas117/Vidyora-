@@ -2,11 +2,8 @@ import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UploadCloud, Image as ImageIcon, CheckCircle2, Film } from "lucide-react";
 import { uploadVideo } from "../Services/uploadService";
-import { useAuth } from "../Hooks/useAuth";
-import { useUserVideos } from "../Hooks/useUserVideos";
 
 const CATEGORIES = ["Education", "Technology", "Gaming", "Music", "Entertainment", "Sports", "News", "Other"];
-const VISIBILITY_OPTIONS = ["Public", "Unlisted", "Private"];
 const TITLE_LIMIT = 100;
 const DESCRIPTION_LIMIT = 500;
 
@@ -23,18 +20,15 @@ export default function UpLoadVideo() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
-  const [visibility, setVisibility] = useState("Public");
 
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState("idle"); // idle | uploading | success | error
   const [progress, setProgress] = useState(0);
   const [serverError, setServerError] = useState(null);
+  const [uploadedVideo, setUploadedVideo] = useState(null);
 
   const videoInputRef = useRef(null);
   const thumbnailInputRef = useRef(null);
-
-  const { user } = useAuth();
-  const { addUserVideo } = useUserVideos();
 
   useEffect(() => {
     return () => {
@@ -108,23 +102,19 @@ export default function UpLoadVideo() {
     setProgress(0);
 
     try {
+      // uploadVideo() now sends a real multipart request to POST /api/v1/videos
+      // and returns the real MongoDB video (mapped to frontend shape),
+      // with permanent Cloudinary URLs — not temporary blob URLs.
       const result = await uploadVideo(
-        { videoFile, thumbnailFile, title, description, category, visibility },
+        { videoFile, thumbnailFile, title, description, category },
         (pct) => setProgress(pct)
       );
 
-      addUserVideo({
-        ...result,
-        channel: user.fullName,
-        avatar: user.avatar,
-        views: "0 views",
-        uploaded: "Just now",
-      });
-
+      setUploadedVideo(result);
       setStatus("success");
     } catch (err) {
       setStatus("error");
-      setServerError(err.message || "Something went wrong. Try again.");
+      setServerError(err.response?.data?.message || err.message || "Something went wrong. Try again.");
     }
   };
 
@@ -136,10 +126,10 @@ export default function UpLoadVideo() {
     setTitle("");
     setDescription("");
     setCategory("");
-    setVisibility("Public");
     setErrors({});
     setStatus("idle");
     setProgress(0);
+    setUploadedVideo(null);
   };
 
   if (status === "success") {
@@ -148,7 +138,7 @@ export default function UpLoadVideo() {
         <CheckCircle2 size={48} className="text-violet-400 mx-auto mb-4" />
         <h1 className="text-lg font-semibold text-zinc-100">Video published</h1>
         <p className="text-sm text-zinc-500 mt-1">
-          This is a mock success — nothing was actually uploaded to a server yet.
+          Your video is live and saved to your account.
         </p>
         <div className="flex justify-center gap-3 mt-6">
           <button
@@ -158,11 +148,19 @@ export default function UpLoadVideo() {
             Upload another
           </button>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/profile")}
             className="px-5 py-2 rounded-full bg-violet-500 text-white text-sm font-medium hover:bg-violet-400 transition-colors"
           >
-            Back to Home
+            Go to Profile
           </button>
+          {uploadedVideo && (
+            <button
+              onClick={() => navigate(`/watch/${uploadedVideo.id}`)}
+              className="px-5 py-2 rounded-full border border-zinc-700 text-sm text-zinc-300 hover:border-zinc-500 transition-colors"
+            >
+              Watch it
+            </button>
+          )}
         </div>
       </div>
     );
@@ -333,26 +331,13 @@ export default function UpLoadVideo() {
             </select>
             {errors.category && <p className="text-xs text-red-400 mt-1.5">{errors.category}</p>}
           </div>
-
-          <div>
-            <label className="text-xs text-zinc-400 block mb-1.5">Visibility</label>
-            <select
-              value={visibility}
-              onChange={(e) => setVisibility(e.target.value)}
-              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-violet-500 transition-colors"
-            >
-              {VISIBILITY_OPTIONS.map((v) => (
-                <option key={v} value={v}>{v}</option>
-              ))}
-            </select>
-          </div>
         </div>
       </div>
 
       {uploading && (
         <div className="mt-8">
           <div className="flex justify-between text-xs text-zinc-400 mb-1.5">
-            <span>Uploading… (mock progress only)</span>
+            <span>Uploading…</span>
             <span>{progress}%</span>
           </div>
           <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden">

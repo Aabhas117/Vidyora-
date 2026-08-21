@@ -5,6 +5,21 @@ const cloudinary = require("../config/cloudinary");
 
 const OWNER_PUBLIC_FIELDS = "_id username fullName avatar";
 
+async function getMyVideos(req, res) {
+  try {
+    const videos = await Video.find({ owner: req.user._id })
+      .sort({ createdAt: -1 })
+      .populate("owner", OWNER_PUBLIC_FIELDS);
+
+    return res.status(200).json({ videos });
+  } catch (error) {
+    console.error("Get my videos error:", error.message);
+    return res
+      .status(500)
+      .json({ message: "Something went wrong. Please try again." });
+  }
+}
+
 async function getAllVideos(req, res) {
   try {
     const videos = await Video.find()
@@ -14,7 +29,9 @@ async function getAllVideos(req, res) {
     return res.status(200).json({ videos });
   } catch (error) {
     console.error("Get all videos error:", error.message);
-    return res.status(500).json({ message: "Something went wrong. Please try again." });
+    return res
+      .status(500)
+      .json({ message: "Something went wrong. Please try again." });
   }
 }
 
@@ -26,7 +43,10 @@ async function getVideoById(req, res) {
       return res.status(400).json({ message: "Invalid video ID." });
     }
 
-    const video = await Video.findById(id).populate("owner", OWNER_PUBLIC_FIELDS);
+    const video = await Video.findById(id).populate(
+      "owner",
+      OWNER_PUBLIC_FIELDS,
+    );
 
     if (!video) {
       return res.status(404).json({ message: "Video not found." });
@@ -35,7 +55,9 @@ async function getVideoById(req, res) {
     return res.status(200).json({ video });
   } catch (error) {
     console.error("Get video by id error:", error.message);
-    return res.status(500).json({ message: "Something went wrong. Please try again." });
+    return res
+      .status(500)
+      .json({ message: "Something went wrong. Please try again." });
   }
 }
 
@@ -78,7 +100,9 @@ async function createVideo(req, res) {
       await cleanupTempFile(videoFile.path);
       await cleanupTempFile(thumbnailFile.path);
       console.error("Cloudinary video upload error:", err.message);
-      return res.status(500).json({ message: "Failed to upload video. Please try again." });
+      return res
+        .status(500)
+        .json({ message: "Failed to upload video. Please try again." });
     }
 
     let thumbnailResult;
@@ -88,11 +112,15 @@ async function createVideo(req, res) {
         folder: "vidyora/thumbnails",
       });
     } catch (err) {
-      await cloudinary.uploader.destroy(videoResult.public_id, { resource_type: "video" }).catch(() => {});
+      await cloudinary.uploader
+        .destroy(videoResult.public_id, { resource_type: "video" })
+        .catch(() => {});
       await cleanupTempFile(videoFile.path);
       await cleanupTempFile(thumbnailFile.path);
       console.error("Cloudinary thumbnail upload error:", err.message);
-      return res.status(500).json({ message: "Failed to upload thumbnail. Please try again." });
+      return res
+        .status(500)
+        .json({ message: "Failed to upload thumbnail. Please try again." });
     }
 
     await cleanupTempFile(videoFile.path);
@@ -111,10 +139,16 @@ async function createVideo(req, res) {
         owner: req.user._id,
       });
     } catch (err) {
-      await cloudinary.uploader.destroy(videoResult.public_id, { resource_type: "video" }).catch(() => {});
-      await cloudinary.uploader.destroy(thumbnailResult.public_id, { resource_type: "image" }).catch(() => {});
+      await cloudinary.uploader
+        .destroy(videoResult.public_id, { resource_type: "video" })
+        .catch(() => {});
+      await cloudinary.uploader
+        .destroy(thumbnailResult.public_id, { resource_type: "image" })
+        .catch(() => {});
       console.error("Video document creation error:", err.message);
-      return res.status(500).json({ message: "Failed to save video. Please try again." });
+      return res
+        .status(500)
+        .json({ message: "Failed to save video. Please try again." });
     }
 
     return res.status(201).json({
@@ -134,7 +168,9 @@ async function createVideo(req, res) {
     await cleanupTempFile(videoFile?.path);
     await cleanupTempFile(thumbnailFile?.path);
     console.error("Create video error:", error.message);
-    return res.status(500).json({ message: "Something went wrong. Please try again." });
+    return res
+      .status(500)
+      .json({ message: "Something went wrong. Please try again." });
   }
 }
 
@@ -164,7 +200,9 @@ async function updateVideo(req, res) {
     if (video.owner.toString() !== req.user._id.toString()) {
       await cleanupTempFile(newVideoFile?.path);
       await cleanupTempFile(newThumbnailFile?.path);
-      return res.status(403).json({ message: "You do not have permission to update this video." });
+      return res
+        .status(403)
+        .json({ message: "You do not have permission to update this video." });
     }
 
     const { title, description, category } = req.body;
@@ -189,15 +227,22 @@ async function updateVideo(req, res) {
     if (newThumbnailFile) {
       let newThumbnailResult;
       try {
-        newThumbnailResult = await cloudinary.uploader.upload(newThumbnailFile.path, {
-          resource_type: "image",
-          folder: "vidyora/thumbnails",
-        });
+        newThumbnailResult = await cloudinary.uploader.upload(
+          newThumbnailFile.path,
+          {
+            resource_type: "image",
+            folder: "vidyora/thumbnails",
+          },
+        );
       } catch (err) {
         await cleanupTempFile(newThumbnailFile.path);
         await cleanupTempFile(newVideoFile?.path);
         console.error("Thumbnail replacement upload error:", err.message);
-        return res.status(500).json({ message: "Failed to upload new thumbnail. Existing thumbnail kept." });
+        return res
+          .status(500)
+          .json({
+            message: "Failed to upload new thumbnail. Existing thumbnail kept.",
+          });
       }
 
       // New upload succeeded — safe to delete the old one now.
@@ -208,7 +253,9 @@ async function updateVideo(req, res) {
 
       cloudinary.uploader
         .destroy(oldThumbnailPublicId, { resource_type: "image" })
-        .catch((err) => console.error("Old thumbnail cleanup error:", err.message));
+        .catch((err) =>
+          console.error("Old thumbnail cleanup error:", err.message),
+        );
     }
 
     // --- Optional video replacement ---
@@ -222,7 +269,11 @@ async function updateVideo(req, res) {
       } catch (err) {
         await cleanupTempFile(newVideoFile.path);
         console.error("Video replacement upload error:", err.message);
-        return res.status(500).json({ message: "Failed to upload new video. Existing video kept." });
+        return res
+          .status(500)
+          .json({
+            message: "Failed to upload new video. Existing video kept.",
+          });
       }
 
       const oldVideoPublicId = video.videoPublicId;
@@ -255,7 +306,9 @@ async function updateVideo(req, res) {
     await cleanupTempFile(newVideoFile?.path);
     await cleanupTempFile(newThumbnailFile?.path);
     console.error("Update video error:", error.message);
-    return res.status(500).json({ message: "Something went wrong. Please try again." });
+    return res
+      .status(500)
+      .json({ message: "Something went wrong. Please try again." });
   }
 }
 
@@ -274,25 +327,40 @@ async function deleteVideo(req, res) {
     }
 
     if (video.owner.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "You do not have permission to delete this video." });
+      return res
+        .status(403)
+        .json({ message: "You do not have permission to delete this video." });
     }
 
     // Delete Cloudinary assets using their stored public IDs — never derived from the URL.
     await cloudinary.uploader
       .destroy(video.videoPublicId, { resource_type: "video" })
-      .catch((err) => console.error("Cloudinary video delete error:", err.message));
+      .catch((err) =>
+        console.error("Cloudinary video delete error:", err.message),
+      );
 
     await cloudinary.uploader
       .destroy(video.thumbnailPublicId, { resource_type: "image" })
-      .catch((err) => console.error("Cloudinary thumbnail delete error:", err.message));
+      .catch((err) =>
+        console.error("Cloudinary thumbnail delete error:", err.message),
+      );
 
     await Video.deleteOne({ _id: video._id });
 
     return res.status(200).json({ message: "Video deleted successfully." });
   } catch (error) {
     console.error("Delete video error:", error.message);
-    return res.status(500).json({ message: "Something went wrong. Please try again." });
+    return res
+      .status(500)
+      .json({ message: "Something went wrong. Please try again." });
   }
 }
 
-module.exports = { getAllVideos, getVideoById, createVideo, updateVideo, deleteVideo };
+module.exports = {
+  getAllVideos,
+  getVideoById,
+  createVideo,
+  updateVideo,
+  deleteVideo,
+  getMyVideos,
+};
