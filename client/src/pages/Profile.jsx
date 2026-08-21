@@ -1,18 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera } from "lucide-react";
 import { useAuth } from "../Hooks/useAuth";
-import { useUserVideos } from "../Hooks/useUserVideos";
 import { useSubscriptions } from "../Hooks/useSubscriptions";
+import { getMyVideos } from "../Services/videoService";
 import ProfileVideoCard from "../Components/ProfileVideoCard";
 import EditVideoModal from "../Components/EditVideoModal";
 import Avatar from "../Components/Avatar";
 
 export default function Profile() {
   const { user, updateProfile } = useAuth();
-  const { userVideos, updateUserVideo, deleteUserVideo } = useUserVideos();
   const { subscriptions } = useSubscriptions();
   const navigate = useNavigate();
+
+  const [myVideos, setMyVideos] = useState([]);
+  const [videosLoading, setVideosLoading] = useState(true);
+  const [videosError, setVideosError] = useState(false);
 
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({
@@ -23,6 +26,25 @@ export default function Profile() {
   const [avatarPreview, setAvatarPreview] = useState(user.avatar);
   const [errors, setErrors] = useState({});
   const [editingVideo, setEditingVideo] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getMyVideos()
+      .then((data) => {
+        if (!cancelled) setMyVideos(data);
+      })
+      .catch(() => {
+        if (!cancelled) setVideosError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setVideosLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleChange = (e) =>
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
@@ -58,6 +80,20 @@ export default function Profile() {
     setAvatarPreview(user.avatar);
     setErrors({});
     setEditing(false);
+  };
+
+  // TEMPORARY: My Videos edit/delete still operate on local state only —
+  // real PATCH/DELETE wiring for these video-card actions is a separate,
+  // not-yet-done piece (the backend PATCH/DELETE /videos/:id routes exist,
+  // but this page doesn't call them yet).
+  const handleDeleteVideo = (videoId) => {
+    setMyVideos((prev) => prev.filter((v) => v.id !== videoId));
+  };
+  const handleSaveEditedVideo = (videoId, patch) => {
+    setMyVideos((prev) =>
+      prev.map((v) => (v.id === videoId ? { ...v, ...patch } : v)),
+    );
+    setEditingVideo(null);
   };
 
   return (
@@ -175,7 +211,7 @@ export default function Profile() {
             <div className="flex gap-8 mt-6 pt-6 border-t border-zinc-800">
               <div>
                 <p className="text-lg font-semibold text-zinc-100">
-                  {userVideos.length}
+                  {myVideos.length}
                 </p>
                 <p className="text-xs text-zinc-500">Videos</p>
               </div>
@@ -212,9 +248,13 @@ export default function Profile() {
 
       <div className="mt-8">
         <h2 className="text-lg font-semibold text-zinc-100 mb-4">My Videos</h2>
-        {userVideos.length === 0 ? (
+        {videosLoading ? (
+          <p className="text-sm text-zinc-500">Loading your videos...</p>
+        ) : videosError ? (
+          <p className="text-sm text-zinc-500">Unable to load your videos.</p>
+        ) : myVideos.length === 0 ? (
           <p className="text-sm text-zinc-500">
-            You haven't uploaded any videos yet.{" "}
+            No videos uploaded yet.{" "}
             <button
               onClick={() => navigate("/upload")}
               className="text-violet-400 hover:underline"
@@ -225,12 +265,12 @@ export default function Profile() {
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-6">
-            {userVideos.map((video) => (
+            {myVideos.map((video) => (
               <ProfileVideoCard
                 key={video.id}
                 video={video}
                 onEdit={setEditingVideo}
-                onDelete={deleteUserVideo}
+                onDelete={handleDeleteVideo}
               />
             ))}
           </div>
@@ -241,10 +281,7 @@ export default function Profile() {
         <EditVideoModal
           video={editingVideo}
           onClose={() => setEditingVideo(null)}
-          onSave={(id, patch) => {
-            updateUserVideo(id, patch);
-            setEditingVideo(null);
-          }}
+          onSave={handleSaveEditedVideo}
         />
       )}
     </div>
