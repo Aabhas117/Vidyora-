@@ -43,7 +43,7 @@ export function AuthProvider({ children }) {
     } catch (err) {
       const message = err.response?.data?.message || "Couldn't create your account. Try again.";
       setError(message);
-      throw new Error(message);
+      throw new error(message);
     }
   }, []);
 
@@ -56,7 +56,7 @@ export function AuthProvider({ children }) {
     } catch (err) {
       const message = err.response?.data?.message || "Incorrect email or password.";
       setError(message);
-      throw new Error(message);
+      throw new error(message);
     }
   }, []);
 
@@ -75,9 +75,17 @@ export function AuthProvider({ children }) {
   // and will revert on refresh. This will be replaced once that endpoint
   // is built in a future phase. Profile.jsx itself needs no changes for
   // this — it already just calls updateProfile(updates).
-  const updateProfile = useCallback((updates) => {
-    setUser((prev) => ({ ...prev, ...updates }));
-  }, []);
+  const updateProfile = useCallback(async (updates, avatarFile) => {
+  const formData = new FormData();
+  if (updates.fullName !== undefined) formData.append("fullName", updates.fullName);
+  if (updates.username !== undefined) formData.append("username", updates.username);
+  if (updates.email !== undefined) formData.append("email", updates.email);
+  if (avatarFile) formData.append("avatar", avatarFile);
+
+  const res = await authAPI.updateMe(formData);
+  setUser(res.data.user);
+  return res.data.user;
+}, []);
 
   const value = {
     user,
