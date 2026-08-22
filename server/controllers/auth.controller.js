@@ -1,6 +1,8 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const fs = require("fs/promises");
 const User = require("../models/User");
+const cloudinary = require("../config/cloudinary");
 
 const MIN_PASSWORD_LENGTH = 6;
 
@@ -29,6 +31,15 @@ function setAuthCookie(res, token) {
     sameSite: "lax", // allows the cookie on same-site navigation/requests during local dev
     maxAge: 24 * 60 * 60 * 1000, // 1 day, in ms — keep in sync with JWT_EXPIRES_IN
   });
+}
+
+async function cleanupTempFile(filePath) {
+  if (!filePath) return;
+  try {
+    await fs.unlink(filePath);
+  } catch {
+    // ignore — file may already be gone
+  }
 }
 
 async function registerUser(req, res) {
@@ -132,4 +143,74 @@ async function logoutUser(req, res) {
   return res.status(200).json({ message: "Logged out successfully." });
 }
 
-module.exports = { registerUser, loginUser, getMe, logoutUser };
+async function updateMe(req, res) {
+  const avatarFile = req.file;
+
+  try {
+    const user = req.user; // attached by requireAuth
+    const { fullName, username, email } = req.body;
+
+    if (fullName !== undefined) {
+      if (!fullName.trim()) {
+        return res.status(400).json({ message: "Full name cannot be empty." });
+      }
+      user.fullName = fullName.trim();
+    }
+
+    if (username !== undefined) {
+      const normalizedUsername = username.trim().toLowerCase();
+      if (!normalizedUsername) {
+        return res.status(400).json({ message: "Username cannot be empty." });
+      }
+      if (normalizedUsername !== user.username) {
+        const existing = await User.findOne({ username: normalizedUsername });
+        if (existing) {
+          return res.status(409).json({ message: "That username is already taken." });
+        }
+      }
+      user.username = normalizedUsername;
+    }
+
+    if (email !== undefined) {
+      const normalizedEmail = email.trim().toLowerCase();
+      if (!normalizedEmail) {
+        return res.status(400).json({ message: "Email cannot be empty." });
+      }
+      if (normalizedEmail !== user.email) {
+        const existing = await User.findOne({ email: normalizedEmail });
+        if (existing) {
+          return res.status(409).json({ message: "That email is already in use." });
+        }
+      }
+      user.email = normalizedEmail;
+    }
+
+    // Optional avatar replacement — upload new before touching the old,
+    // same "upload-then-delete-old" pattern used for video/thumbnail updates.
+    if (avatarFile) {
+      let uploadResult;
+      try {
+        uploadResult = await cloudinary.uploader.upload(avatarFile.path, {
+          resource_type: "image",
+          folder: "vidyora/avatars",
+        });
+      } catch (err) {
+        await cleanupTempFile(avatarFile.path);
+        console.error("Avatar upload error:", err.message);
+        return res.status(500).json({ message: "Failed to upload avatar. Please try again." });
+      }
+      await cleanupTempFile(avatarFile.path);
+      user.avatar = uploadResult.secure_url;
+    }
+
+    await user.save();
+
+    return res.status(200).json({ user: toSafeUser(user) });
+  } catch (error) {
+    await cleanupTempFile(avatarFile?.path);
+    console.error("Update profile error:", error.message);
+    return res.status(500).json({ message: "Something went wrong. Please try again." });
+  }
+}
+
+module.exports = { registerUser, loginUser, getMe, logoutUser, updateMe };
