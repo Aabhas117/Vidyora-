@@ -14,6 +14,7 @@ export const authAPI = {
   login: (data) => api.post("/auth/login", data), // { email, password }
   getMe: () => api.get("/auth/me"),
   logout: () => api.post("/auth/logout"),
+  updateMe: (formData) => api.patch("/auth/me", formData, { headers: { "Content-Type": undefined } }),
 };
 
 // Other feature groups (videoAPI, likeAPI, historyAPI, playlistAPI,
