@@ -10,7 +10,10 @@ import { mapVideo } from "../Utils/videoMapper";
  * Do NOT set Content-Type manually — the browser generates the correct
  * multipart boundary automatically when FormData is passed as the body.
  */
-export async function uploadVideo({ videoFile, thumbnailFile, title, description, category }, onProgress) {
+export async function uploadVideo(
+  { videoFile, thumbnailFile, title, description, category },
+  onProgress,
+) {
   if (!videoFile || !thumbnailFile) {
     throw new Error("Video and thumbnail are required.");
   }
@@ -23,6 +26,7 @@ export async function uploadVideo({ videoFile, thumbnailFile, title, description
   formData.append("thumbnail", thumbnailFile);
 
   const res = await api.post("/videos", formData, {
+    headers: { "Content-Type": undefined },
     onUploadProgress: (event) => {
       if (event.total && onProgress) {
         onProgress(Math.round((event.loaded / event.total) * 100));
