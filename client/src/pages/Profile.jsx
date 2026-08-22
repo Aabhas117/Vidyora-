@@ -71,21 +71,26 @@ export default function Profile() {
 const handleSave = async (e) => {
   e.preventDefault();
   if (!validate()) return;
-  await updateProfile(form, avatarFile);
-  setAvatarFile(null);
-  setEditing(false);
+  try {
+    await updateProfile(form, avatarFile);
+    setAvatarFile(null);
+    setEditing(false);
+  } catch (err) {
+    setErrors({ form: err.response?.data?.message || "Couldn't save changes. Try again." });
+  }
 };
 
   const handleCancel = () => {
-    setForm({
-      fullName: user.fullName,
-      username: user.username,
-      email: user.email,
-    });
-    setAvatarPreview(user.avatar);
-    setErrors({});
-    setEditing(false);
-  };
+  setForm({
+    fullName: user.fullName,
+    username: user.username,
+    email: user.email,
+  });
+  setAvatarPreview(user.avatar);
+  setAvatarFile(null);
+  setErrors({});
+  setEditing(false);
+};
 
   // TEMPORARY: My Videos edit/delete still operate on local state only —
   // real PATCH/DELETE wiring for these video-card actions is a separate,
