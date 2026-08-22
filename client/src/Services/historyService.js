@@ -1,40 +1,36 @@
+import api from "./api";
+import { mapVideo } from "../Utils/videoMapper";
+
 /**
- * MOCK history persistence — localStorage only, no backend yet.
+ * Real backend-backed history persistence.
  *
- * Later this becomes:
- *   export async function loadHistory() {
- *     const res = await axios.get("/api/v1/history");
- *     return res.data.history;
- *   }
- *   export async function pushToHistory(video) {
- *     await axios.post("/api/v1/history", { videoId: video.id });
- *   }
- *   export async function removeHistoryEntry(videoId) {
- *     await axios.delete(`/api/v1/history/${videoId}`);
- *   }
- *   export async function clearAllHistory() {
- *     await axios.delete("/api/v1/history");
- *   }
- *
- * HistoryContext.jsx never needs to change when that happens — it only
- * calls these four functions and updates its own state with the result.
+ * HistoryContext.jsx calls these with the same names/signatures as the
+ * mock versions, so this is the only file that needed to change to move
+ * off localStorage.
  */
-const STORAGE_PREFIX = "vidyora_history_";
 
-function getKey(userId) {
-  return `${STORAGE_PREFIX}${userId}`;
-}
-
-export function loadHistory(userId) {
-  if (!userId) return [];
+export async function loadHistory(_userId) {
   try {
-    return JSON.parse(localStorage.getItem(getKey(userId))) || [];
+    const res = await api.get("/history");
+    // Backend returns join-records: { _id, video: {...}, watchedAt }.
+    // Flatten to the flat video-shaped objects History.jsx expects.
+    return res.data.history.map((entry) => ({
+      ...mapVideo(entry.video),
+      watchedAt: entry.watchedAt,
+    }));
   } catch {
     return [];
   }
 }
 
-export function saveHistory(userId, history) {
-  if (!userId) return;
-  localStorage.setItem(getKey(userId), JSON.stringify(history));
+export async function pushToHistory(videoId) {
+  await api.post(`/history/${videoId}`);
+}
+
+export async function removeHistoryEntry(videoId) {
+  await api.delete(`/history/${videoId}`);
+}
+
+export async function clearAllHistory() {
+  await api.delete("/history");
 }

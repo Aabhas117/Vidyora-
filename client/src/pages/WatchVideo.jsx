@@ -3,7 +3,6 @@ import { Share2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useHistory } from "../Hooks/useHistory";
 import { getVideoById, getVideos } from "../Services/videoService";
-import { getChannelId } from "../Data/channelUtils";
 import VideoPlayer from "../Components/VideoPlayer";
 import LikeButton from "../Components/LikeButton";
 import SubscriptionButton from "../Components/SubscriptionButton";
@@ -29,7 +28,7 @@ export default function WatchVideo() {
       .then((data) => {
         if (cancelled) return;
         setVideo(data);
-        addToHistory(data); // History remains mock/localStorage this phase, unchanged
+        addToHistory(data);
       })
       .catch(() => {
         if (!cancelled) setError(true);
@@ -86,7 +85,7 @@ export default function WatchVideo() {
 
         <div className="flex flex-wrap items-center justify-between gap-4 mt-3">
           <div className="flex items-center gap-3">
-            <Link to={`/channel/${getChannelId(video.channel)}`}>
+            <Link to={`/channel/${video.ownerId}`}>
               <Avatar
                 src={video.avatar}
                 name={video.channel}
@@ -95,7 +94,7 @@ export default function WatchVideo() {
             </Link>
             <div>
               <Link
-                to={`/channel/${getChannelId(video.channel)}`}
+                to={`/channel/${video.ownerId}`}
                 className="text-sm font-medium text-zinc-100 hover:text-violet-400 transition-colors"
               >
                 {video.channel}

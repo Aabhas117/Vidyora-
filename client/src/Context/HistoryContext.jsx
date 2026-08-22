@@ -1,6 +1,11 @@
 import { createContext, useState, useEffect, useCallback } from "react";
 import { useAuth } from "../Hooks/useAuth";
-import { loadHistory, saveHistory } from "../Services/historyService";
+import {
+  loadHistory,
+  pushToHistory,
+  removeHistoryEntry,
+  clearAllHistory,
+} from "../Services/historyService";
 
 export const HistoryContext = createContext(null);
 
@@ -8,10 +13,9 @@ export function HistoryProvider({ children }) {
   const { user, isAuthenticated } = useAuth();
   const [history, setHistory] = useState([]);
 
-  // Reload history whenever who's logged in changes (login, logout, or a different account logs in).
   useEffect(() => {
     if (isAuthenticated && user) {
-      setHistory(loadHistory(user._id));
+      loadHistory(user._id).then(setHistory);
     } else {
       setHistory([]);
     }
@@ -19,17 +23,19 @@ export function HistoryProvider({ children }) {
 
   const addToHistory = useCallback(
     (video) => {
-      // Only track history for logged-in users — history is a per-account feature.
       if (!isAuthenticated || !user) return;
 
+      // Optimistic update — move/insert at the top immediately, matching
+      // the backend's upsert-on-rewatch behavior.
       setHistory((prev) => {
-        // Remove any existing entry for this video first, so re-watching
-        // moves it to the top instead of creating a duplicate.
         const withoutDuplicate = prev.filter((entry) => entry.id !== video.id);
         const newEntry = { ...video, watchedAt: new Date().toISOString() };
-        const next = [newEntry, ...withoutDuplicate];
-        saveHistory(user._id, next);
-        return next;
+        return [newEntry, ...withoutDuplicate];
+      });
+
+      pushToHistory(video.id).catch(() => {
+        // If this fails, the next full reload (e.g. page refresh) will
+        // re-sync from the server's real state.
       });
     },
     [isAuthenticated, user]
@@ -38,11 +44,8 @@ export function HistoryProvider({ children }) {
   const removeFromHistory = useCallback(
     (videoId) => {
       if (!user) return;
-      setHistory((prev) => {
-        const next = prev.filter((entry) => entry.id !== videoId);
-        saveHistory(user._id, next);
-        return next;
-      });
+      setHistory((prev) => prev.filter((entry) => entry.id !== videoId));
+      removeHistoryEntry(videoId).catch(() => {});
     },
     [user]
   );
@@ -50,7 +53,7 @@ export function HistoryProvider({ children }) {
   const clearHistory = useCallback(() => {
     if (!user) return;
     setHistory([]);
-    saveHistory(user._id, []);
+    clearAllHistory().catch(() => {});
   }, [user]);
 
   const value = { history, addToHistory, removeFromHistory, clearHistory };
