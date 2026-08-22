@@ -26,6 +26,8 @@ export default function Profile() {
   const [avatarPreview, setAvatarPreview] = useState(user.avatar);
   const [errors, setErrors] = useState({});
   const [editingVideo, setEditingVideo] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);    
+
 
   useEffect(() => {
     let cancelled = false;
@@ -50,10 +52,11 @@ export default function Profile() {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
   const handleAvatarChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setAvatarPreview(URL.createObjectURL(file));
-  };
+  const file = e.target.files?.[0];
+  if (!file) return;
+  setAvatarFile(file);
+  setAvatarPreview(URL.createObjectURL(file));
+};
 
   const validate = () => {
     const next = {};
@@ -64,12 +67,14 @@ export default function Profile() {
     return Object.keys(next).length === 0;
   };
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    if (!validate()) return;
-    updateProfile({ ...form, avatar: avatarPreview });
-    setEditing(false);
-  };
+  
+const handleSave = async (e) => {
+  e.preventDefault();
+  if (!validate()) return;
+  await updateProfile(form, avatarFile);
+  setAvatarFile(null);
+  setEditing(false);
+};
 
   const handleCancel = () => {
     setForm({
@@ -87,7 +92,7 @@ export default function Profile() {
   // not-yet-done piece (the backend PATCH/DELETE /videos/:id routes exist,
   // but this page doesn't call them yet).
 
-  
+
   const handleDeleteVideo = (videoId) => {
     setMyVideos((prev) => prev.filter((v) => v.id !== videoId));
   };
