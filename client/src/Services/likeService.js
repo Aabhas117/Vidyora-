@@ -1,37 +1,40 @@
+import api from "./api";
+import { mapVideo } from "../Utils/videoMapper";
+
 /**
- * MOCK like persistence — localStorage only, no backend yet.
+ * Real backend-backed like persistence.
  *
- * Later this becomes:
- *   export async function loadLikes() {
- *     const res = await axios.get("/api/v1/likes");
- *     return res.data.likedVideos;
- *   }
- *   export async function likeVideo(videoId) {
- *     await axios.post(`/api/v1/likes/${videoId}`);
- *   }
- *   export async function unlikeVideo(videoId) {
- *     await axios.delete(`/api/v1/likes/${videoId}`);
- *   }
- *
- * LikeContext.jsx never needs to change when that happens — it only calls
- * these functions and updates its own state with the result.
+ * LikeContext.jsx calls these exactly as it did the mock versions —
+ * loadLikes(userId), saveLikes(userId, likedVideos) — so nothing above
+ * this file needs to change. The `userId` parameter is now unused (the
+ * backend identifies the user via the auth cookie, not a client-passed
+ * ID), but kept in the signature so the call sites don't need editing.
  */
-const STORAGE_PREFIX = "vidyora_liked_";
 
-function getKey(userId) {
-  return `${STORAGE_PREFIX}${userId}`;
-}
-
-export function loadLikes(userId) {
-  if (!userId) return [];
+export async function loadLikes(_userId) {
   try {
-    return JSON.parse(localStorage.getItem(getKey(userId))) || [];
+    const res = await api.get("/likes");
+    // Backend returns join-records: { _id, video: {...}, createdAt }.
+    // Flatten to the flat video-shaped objects LikeContext/LikedVideos expect.
+    return res.data.likes.map((entry) => ({
+      ...mapVideo(entry.video),
+      likedAt: entry.createdAt,
+    }));
   } catch {
     return [];
   }
 }
 
-export function saveLikes(userId, likedVideos) {
-  if (!userId) return;
-  localStorage.setItem(getKey(userId), JSON.stringify(likedVideos));
+export async function saveLikes(_userId, _likedVideos) {
+  // No-op: the backend is now the source of truth, updated directly by
+  // likeVideoOnServer/unlikeVideoOnServer below, not by re-saving a full
+  // list. Kept as a no-op so LikeContext's existing calls don't error.
+}
+
+export async function likeVideoOnServer(videoId) {
+  await api.post(`/likes/${videoId}`);
+}
+
+export async function unlikeVideoOnServer(videoId) {
+  await api.delete(`/likes/${videoId}`);
 }

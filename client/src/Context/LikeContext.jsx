@@ -1,16 +1,16 @@
 import { createContext, useState, useEffect, useCallback } from "react";
 import { useAuth } from "../Hooks/useAuth";
-import { loadLikes, saveLikes } from "../Services/likeService";
+import { loadLikes, likeVideoOnServer, unlikeVideoOnServer } from "../Services/likeService";
+
 export const LikeContext = createContext(null);
 
 export function LikeProvider({ children }) {
   const { user, isAuthenticated } = useAuth();
   const [likedVideos, setLikedVideos] = useState([]);
 
-  // Reload liked videos whenever who's logged in changes.
   useEffect(() => {
     if (isAuthenticated && user) {
-      setLikedVideos(loadLikes(user._id));
+      loadLikes(user._id).then(setLikedVideos);
     } else {
       setLikedVideos([]);
     }
@@ -23,28 +23,42 @@ export function LikeProvider({ children }) {
 
   const toggleLike = useCallback(
     (video) => {
-      if (!isAuthenticated || !user) return false; // caller decides what to do (e.g. redirect to /login)
+      if (!isAuthenticated || !user) return false;
 
-      setLikedVideos((prev) => {
-        const alreadyLiked = prev.some((v) => v.id === video.id);
-        const next = alreadyLiked
-          ? prev.filter((v) => v.id !== video.id) // unlike
-          : [{ ...video, likedAt: new Date().toISOString() }, ...prev]; // like — prepend, no duplicate possible since we just filtered it out
-        saveLikes(user._id, next);
-        return next;
+      const alreadyLiked = likedVideos.some((v) => v.id === video.id);
+
+      // Optimistic update — reflect the change immediately, then sync
+      // with the server; roll back only if the request actually fails.
+      setLikedVideos((prev) =>
+        alreadyLiked
+          ? prev.filter((v) => v.id !== video.id)
+          : [{ ...video, likedAt: new Date().toISOString() }, ...prev]
+      );
+
+      const request = alreadyLiked
+        ? unlikeVideoOnServer(video.id)
+        : likeVideoOnServer(video.id);
+
+      request.catch(() => {
+        // Roll back on failure.
+        setLikedVideos((prev) =>
+          alreadyLiked
+            ? [{ ...video, likedAt: new Date().toISOString() }, ...prev]
+            : prev.filter((v) => v.id !== video.id)
+        );
       });
+
       return true;
     },
-    [isAuthenticated, user]
+    [isAuthenticated, user, likedVideos]
   );
 
   const removeLike = useCallback(
     (videoId) => {
       if (!user) return;
-      setLikedVideos((prev) => {
-        const next = prev.filter((v) => v.id !== videoId);
-        saveLikes(user._id, next);
-        return next;
+      setLikedVideos((prev) => prev.filter((v) => v.id !== videoId));
+      unlikeVideoOnServer(videoId).catch(() => {
+        // If this fails, a refresh will re-sync from the server anyway.
       });
     },
     [user]
@@ -52,9 +66,12 @@ export function LikeProvider({ children }) {
 
   const clearLikedVideos = useCallback(() => {
     if (!user) return;
+    const previous = likedVideos;
     setLikedVideos([]);
-    saveLikes(user._id, []);
-  }, [user]);
+    Promise.all(previous.map((v) => unlikeVideoOnServer(v.id))).catch(() => {
+      // Best effort — a refresh will re-sync from the server if some calls failed.
+    });
+  }, [user, likedVideos]);
 
   const value = { likedVideos, isLiked, toggleLike, removeLike, clearLikedVideos };
 
