@@ -1,6 +1,6 @@
 import api from "./api";
 import { mapVideo, mapVideos } from "../Utils/videoMapper";
-
+import { getVideoById, getVideos, registerView } from "../Services/vedioService";
 // Get all videos
 export const getVideos = async () => {
   const res = await api.get("/videos");
@@ -21,3 +21,6 @@ export const getVideoById = async (id) => {
 
   return mapVideo(res.data.video || res.data);
 };
+export async function registerView(id) {
+  await api.post(`/videos/${id}/view`);
+}
