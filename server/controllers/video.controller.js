@@ -34,7 +34,6 @@ async function getAllVideos(req, res) {
       .json({ message: "Something went wrong. Please try again." });
   }
 }
-
 async function getVideoById(req, res) {
   try {
     const { id } = req.params;
@@ -43,10 +42,14 @@ async function getVideoById(req, res) {
       return res.status(400).json({ message: "Invalid video ID." });
     }
 
-    const video = await Video.findById(id).populate(
-      "owner",
-      OWNER_PUBLIC_FIELDS,
-    );
+    // Increment view count atomically, then return the updated document.
+    // Using findByIdAndUpdate with $inc avoids a race condition that a
+    // separate find-then-save would have under concurrent requests.
+    const video = await Video.findByIdAndUpdate(
+      id,
+      { $inc: { views: 1 } },
+      { new: true },
+    ).populate("owner", OWNER_PUBLIC_FIELDS);
 
     if (!video) {
       return res.status(404).json({ message: "Video not found." });
@@ -238,11 +241,9 @@ async function updateVideo(req, res) {
         await cleanupTempFile(newThumbnailFile.path);
         await cleanupTempFile(newVideoFile?.path);
         console.error("Thumbnail replacement upload error:", err.message);
-        return res
-          .status(500)
-          .json({
-            message: "Failed to upload new thumbnail. Existing thumbnail kept.",
-          });
+        return res.status(500).json({
+          message: "Failed to upload new thumbnail. Existing thumbnail kept.",
+        });
       }
 
       // New upload succeeded — safe to delete the old one now.
@@ -269,11 +270,9 @@ async function updateVideo(req, res) {
       } catch (err) {
         await cleanupTempFile(newVideoFile.path);
         console.error("Video replacement upload error:", err.message);
-        return res
-          .status(500)
-          .json({
-            message: "Failed to upload new video. Existing video kept.",
-          });
+        return res.status(500).json({
+          message: "Failed to upload new video. Existing video kept.",
+        });
       }
 
       const oldVideoPublicId = video.videoPublicId;

@@ -156,7 +156,7 @@ export default function WatchVideo() {
       </div>
 
       <div className="order-3 xl:order-none xl:col-start-1 xl:row-start-2 border-t border-zinc-800 pt-6 mt-2">
-       <CommentList videoId={videoId} />
+        <CommentList videoId={videoId} />
       </div>
     </div>
   );
