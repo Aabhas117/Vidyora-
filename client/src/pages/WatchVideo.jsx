@@ -1,8 +1,8 @@
 import { useParams, Link } from "react-router-dom";
 import { Share2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useHistory } from "../Hooks/useHistory";
-import { getVideoById, getVideos } from "../Services/videoService";
+import { getVideoById, getVideos, registerView } from "../Services/videoService";
 import VideoPlayer from "../Components/VideoPlayer";
 import LikeButton from "../Components/LikeButton";
 import SubscriptionButton from "../Components/SubscriptionButton";
@@ -19,6 +19,10 @@ export default function WatchVideo() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  // Persists across React Strict Mode's double-invoke in development,
+  // so a view is only registered once per distinct videoId visit.
+  const hasRegisteredView = useRef(null);
+
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -29,6 +33,11 @@ export default function WatchVideo() {
         if (cancelled) return;
         setVideo(data);
         addToHistory(data);
+
+        if (hasRegisteredView.current !== videoId) {
+          hasRegisteredView.current = videoId;
+          registerView(videoId).catch(() => {});
+        }
       })
       .catch(() => {
         if (!cancelled) setError(true);
