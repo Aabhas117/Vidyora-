@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Users } from "lucide-react";
 import { useSubscriptions } from "../Hooks/useSubscriptions";
-import { getChannelId } from "../Data/channelUtils";
 import { getVideos } from "../Services/videoService";
 import VideoGrid from "../Components/VideoGrid";
 import Avatar from "../Components/Avatar";
+
 export default function Subscriptions() {
   const { subscriptions } = useSubscriptions();
   const navigate = useNavigate();
@@ -19,9 +19,6 @@ export default function Subscriptions() {
     setLoading(true);
     setError(false);
 
-    // Reuses the same videoService.js (and its existing backend→frontend
-    // mapping) already used by Home/Trending/Search — no second Axios
-    // instance, no duplicate mapping logic.
     getVideos()
       .then((data) => {
         if (!cancelled) setAllVideos(data);
@@ -39,9 +36,8 @@ export default function Subscriptions() {
   }, []);
 
   const subscribedIds = subscriptions.map((c) => c.id);
-  const subscribedVideos = allVideos.filter((v) =>
-    subscribedIds.includes(getChannelId(v.channel)),
-  );
+  const subscribedVideos = allVideos.filter((v) => subscribedIds.includes(v.ownerId));
+
   if (subscriptions.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center text-center py-24">
@@ -73,13 +69,7 @@ export default function Subscriptions() {
             to={`/channel/${c.id}`}
             className="flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-xl p-3 hover:border-zinc-700 transition-colors"
           >
-            {c.avatar ? (
-              <Avatar src={c.avatar} name={c.name} className="h-10 w-10" />
-            ) : (
-              <div className="h-10 w-10 rounded-full bg-zinc-800 flex items-center justify-center text-xs text-violet-400">
-                {c.name?.[0]?.toUpperCase() || "?"}
-              </div>
-            )}
+            <Avatar src={c.avatar} name={c.name} className="h-10 w-10" />
             <span className="text-sm font-medium text-zinc-100">{c.name}</span>
           </Link>
         ))}
