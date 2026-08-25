@@ -6,6 +6,7 @@ const {
   updateVideo,
   deleteVideo,
   getMyVideos,
+  registerView,
 } = require("../controllers/video.controller");
 const { requireAuth } = require("../middleware/auth.middleware");
 const upload = require("../middleware/upload.middleware");
@@ -15,6 +16,7 @@ const router = express.Router();
 router.get("/", getAllVideos);
 router.get("/my", requireAuth, getMyVideos); // must come before /:id
 router.get("/:id", getVideoById);
+router.post("/:id/view", registerView);
 
 router.post(
   "/",

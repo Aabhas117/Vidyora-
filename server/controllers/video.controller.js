@@ -64,6 +64,29 @@ async function getVideoById(req, res) {
   }
 }
 
+async function registerView(req, res) {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid video ID." });
+    }
+
+    const video = await Video.findByIdAndUpdate(id, { $inc: { views: 1 } }, { new: true });
+
+    if (!video) {
+      return res.status(404).json({ message: "Video not found." });
+    }
+
+    return res.status(200).json({ views: video.views });
+  } catch (error) {
+    console.error("Register view error:", error.message);
+    return res
+      .status(500)
+      .json({ message: "Something went wrong. Please try again." });
+  }
+}
+
 async function cleanupTempFile(filePath) {
   if (!filePath) return;
   try {
@@ -362,4 +385,5 @@ module.exports = {
   updateVideo,
   deleteVideo,
   getMyVideos,
+    registerView,
 };
