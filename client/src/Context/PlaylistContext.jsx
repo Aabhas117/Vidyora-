@@ -1,11 +1,15 @@
 import { createContext, useState, useEffect, useCallback } from "react";
 import { useAuth } from "../Hooks/useAuth";
-import { loadPlaylists, savePlaylists } from "../Services/playlistService";
+import {
+  getPlaylists,
+  createPlaylistOnServer,
+  renamePlaylistOnServer,
+  deletePlaylistOnServer,
+  addVideoToPlaylistOnServer,
+  removeVideoFromPlaylistOnServer,
+} from "../Services/playlistService";
 
 export const PlaylistContext = createContext(null);
-
-const NAME_LIMIT = 60;
-const DESCRIPTION_LIMIT = 200;
 
 export function PlaylistProvider({ children }) {
   const { user, isAuthenticated } = useAuth();
@@ -13,99 +17,64 @@ export function PlaylistProvider({ children }) {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      setPlaylists(loadPlaylists(user._id));
+      getPlaylists().then(setPlaylists).catch(() => setPlaylists([]));
     } else {
       setPlaylists([]);
     }
   }, [isAuthenticated, user]);
 
   const createPlaylist = useCallback(
-    (name, description = "") => {
+    async (name, description = "") => {
       if (!user || !name?.trim()) return null;
-      const newPlaylist = {
-        id: Date.now(),
-        name: name.trim().slice(0, NAME_LIMIT),
-        description: description.trim().slice(0, DESCRIPTION_LIMIT),
-        ownerId: user._id,
-        videos: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      setPlaylists((prev) => {
-        const next = [newPlaylist, ...prev];
-        savePlaylists(user._id, next);
-        return next;
-      });
+      const newPlaylist = await createPlaylistOnServer(name.trim(), description.trim());
+      setPlaylists((prev) => [newPlaylist, ...prev]);
       return newPlaylist;
     },
     [user]
   );
 
   const deletePlaylist = useCallback(
-    (playlistId) => {
+    async (playlistId) => {
       if (!user) return;
-      setPlaylists((prev) => {
-        const next = prev.filter((p) => p.id !== playlistId);
-        savePlaylists(user._id, next);
-        return next;
-      });
+      const previous = playlists;
+      setPlaylists((prev) => prev.filter((p) => p.id !== playlistId));
+      try {
+        await deletePlaylistOnServer(playlistId);
+      } catch {
+        setPlaylists(previous); // roll back on failure
+      }
     },
-    [user]
+    [user, playlists]
   );
 
   const renamePlaylist = useCallback(
-    (playlistId, name, description) => {
+    async (playlistId, name, description) => {
       if (!user || !name?.trim()) return;
-      setPlaylists((prev) => {
-        const next = prev.map((p) =>
-          p.id === playlistId
-            ? {
-                ...p,
-                name: name.trim().slice(0, NAME_LIMIT),
-                description:
-                  description !== undefined
-                    ? description.trim().slice(0, DESCRIPTION_LIMIT)
-                    : p.description,
-                updatedAt: new Date().toISOString(),
-              }
-            : p
-        );
-        savePlaylists(user._id, next);
-        return next;
-      });
+      const updated = await renamePlaylistOnServer(playlistId, name.trim(), description);
+      setPlaylists((prev) => prev.map((p) => (p.id === playlistId ? updated : p)));
     },
     [user]
   );
 
   const addVideoToPlaylist = useCallback(
-    (playlistId, video) => {
+    async (playlistId, video) => {
       if (!user) return;
-      setPlaylists((prev) => {
-        const next = prev.map((p) => {
-          if (p.id !== playlistId) return p;
-          const alreadyIn = p.videos.some((v) => v.id === video.id);
-          if (alreadyIn) return p; // no duplicates
-          return { ...p, videos: [video, ...p.videos], updatedAt: new Date().toISOString() };
-        });
-        savePlaylists(user._id, next);
-        return next;
-      });
+      try {
+        const updated = await addVideoToPlaylistOnServer(playlistId, video.id);
+        setPlaylists((prev) => prev.map((p) => (p.id === playlistId ? updated : p)));
+      } catch {
+        // 409 (already in playlist) or other failure — leave state as-is,
+        // caller (AddToPlaylistButton) can decide how to surface this.
+      }
     },
     [user]
   );
 
   const removeVideoFromPlaylist = useCallback(
-    (playlistId, videoId) => {
+    async (playlistId, videoId) => {
       if (!user) return;
-      setPlaylists((prev) => {
-        const next = prev.map((p) =>
-          p.id === playlistId
-            ? { ...p, videos: p.videos.filter((v) => v.id !== videoId), updatedAt: new Date().toISOString() }
-            : p
-        );
-        savePlaylists(user._id, next);
-        return next;
-      });
+      const updated = await removeVideoFromPlaylistOnServer(playlistId, videoId);
+      setPlaylists((prev) => prev.map((p) => (p.id === playlistId ? updated : p)));
     },
     [user]
   );
@@ -119,7 +88,7 @@ export function PlaylistProvider({ children }) {
   );
 
   const getPlaylistById = useCallback(
-    (playlistId) => playlists.find((p) => p.id === Number(playlistId)) || null,
+    (playlistId) => playlists.find((p) => p.id === playlistId) || null,
     [playlists]
   );
 

@@ -1,32 +1,51 @@
-/**
- * MOCK playlist persistence — localStorage only, no backend yet.
- *
- * Later this becomes:
- *   GET    /api/v1/playlists
- *   POST   /api/v1/playlists
- *   DELETE /api/v1/playlists/:id
- *   POST   /api/v1/playlists/:id/videos
- *   DELETE /api/v1/playlists/:id/videos/:videoId
- *
- * PlaylistContext.jsx never needs to change when that happens — it only
- * calls loadPlaylists/savePlaylists and updates its own state.
- */
-const STORAGE_PREFIX = "vidyora_playlists_";
+import api from "./api";
+import { mapVideo } from "../Utils/videoMapper";
 
-function getKey(userId) {
-  return `${STORAGE_PREFIX}${userId}`;
+function mapPlaylist(backendPlaylist) {
+  return {
+    id: backendPlaylist._id,
+    name: backendPlaylist.name,
+    description: backendPlaylist.description || "",
+    ownerId: backendPlaylist.owner,
+    videos: (backendPlaylist.videos || []).map((v) =>
+      // videos may arrive populated (objects) or as raw IDs, depending on endpoint
+      typeof v === "object" ? mapVideo(v) : { id: v }
+    ),
+    createdAt: backendPlaylist.createdAt,
+    updatedAt: backendPlaylist.updatedAt,
+  };
 }
 
-export function loadPlaylists(userId) {
-  if (!userId) return [];
-  try {
-    return JSON.parse(localStorage.getItem(getKey(userId))) || [];
-  } catch {
-    return [];
-  }
+export async function getPlaylists() {
+  const res = await api.get("/playlists");
+  return res.data.playlists.map(mapPlaylist);
 }
 
-export function savePlaylists(userId, playlists) {
-  if (!userId) return;
-  localStorage.setItem(getKey(userId), JSON.stringify(playlists));
+export async function getPlaylistById(playlistId) {
+  const res = await api.get(`/playlists/${playlistId}`);
+  return mapPlaylist(res.data.playlist);
+}
+
+export async function createPlaylistOnServer(name, description) {
+  const res = await api.post("/playlists", { name, description });
+  return mapPlaylist(res.data.playlist);
+}
+
+export async function renamePlaylistOnServer(playlistId, name, description) {
+  const res = await api.patch(`/playlists/${playlistId}`, { name, description });
+  return mapPlaylist(res.data.playlist);
+}
+
+export async function deletePlaylistOnServer(playlistId) {
+  await api.delete(`/playlists/${playlistId}`);
+}
+
+export async function addVideoToPlaylistOnServer(playlistId, videoId) {
+  const res = await api.post(`/playlists/${playlistId}/videos/${videoId}`);
+  return mapPlaylist(res.data.playlist);
+}
+
+export async function removeVideoFromPlaylistOnServer(playlistId, videoId) {
+  const res = await api.delete(`/playlists/${playlistId}/videos/${videoId}`);
+  return mapPlaylist(res.data.playlist);
 }
