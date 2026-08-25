@@ -14,18 +14,22 @@ export default function Playlist() {
   const [error, setError] = useState("");
   const [confirmingDelete, setConfirmingDelete] = useState(null);
 
-  const handleCreate = (e) => {
-    e.preventDefault();
-    if (!name.trim()) {
-      setError("Playlist name is required.");
-      return;
-    }
-    createPlaylist(name, description);
+ const handleCreate = async (e) => {
+  e.preventDefault();
+  if (!name.trim()) {
+    setError("Playlist name is required.");
+    return;
+  }
+  try {
+    await createPlaylist(name, description);
     setName("");
     setDescription("");
     setError("");
     setShowForm(false);
-  };
+  } catch {
+    setError("Couldn't create playlist. Try again.");
+  }
+};
 
   return (
     <div className="max-w-3xl">

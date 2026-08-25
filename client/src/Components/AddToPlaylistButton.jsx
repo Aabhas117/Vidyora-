@@ -4,7 +4,6 @@ import { ListPlus, Check, Plus } from "lucide-react";
 import { useAuth } from "../Hooks/useAuth";
 import { usePlaylists } from "../Hooks/usePlaylists";
 
-
 export default function AddToPlaylistButton({ video }) {
   const { isAuthenticated } = useAuth();
   const { playlists, createPlaylist, addVideoToPlaylist, removeVideoFromPlaylist, isVideoInPlaylist } =
@@ -14,7 +13,6 @@ export default function AddToPlaylistButton({ video }) {
   const navigate = useNavigate();
   const menuRef = useRef(null);
 
-  // Close the dropdown when clicking outside it.
   useEffect(() => {
     function handleClickOutside(e) {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -33,19 +31,19 @@ export default function AddToPlaylistButton({ video }) {
     setOpen((o) => !o);
   };
 
-  const handleToggleVideo = (playlistId) => {
+  const handleToggleVideo = async (playlistId) => {
     if (isVideoInPlaylist(playlistId, video.id)) {
-      removeVideoFromPlaylist(playlistId, video.id);
+      await removeVideoFromPlaylist(playlistId, video.id);
     } else {
-      addVideoToPlaylist(playlistId, video);
+      await addVideoToPlaylist(playlistId, video);
     }
   };
 
-  const handleCreate = (e) => {
+  const handleCreate = async (e) => {
     e.preventDefault();
     if (!newName.trim()) return;
-    const playlist = createPlaylist(newName.trim());
-    if (playlist) addVideoToPlaylist(playlist.id, video);
+    const playlist = await createPlaylist(newName.trim());
+    if (playlist) await addVideoToPlaylist(playlist.id, video);
     setNewName("");
   };
 

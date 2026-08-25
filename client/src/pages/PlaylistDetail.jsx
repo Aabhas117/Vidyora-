@@ -35,15 +35,19 @@ export default function PlaylistDetail() {
     setEditing(true);
   };
 
-  const handleSaveRename = (e) => {
+  const handleSaveRename = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
-    renamePlaylist(playlist.id, name, description);
-    setEditing(false);
+    try {
+      await renamePlaylist(playlist.id, name, description);
+      setEditing(false);
+    } catch {
+      // Leave the edit form open so the user can retry.
+    }
   };
 
-  const handleDelete = () => {
-    deletePlaylist(playlist.id);
+  const handleDelete = async () => {
+    await deletePlaylist(playlist.id);
     navigate("/playlists");
   };
 
