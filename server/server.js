@@ -14,7 +14,7 @@ const app = express();
 connectDB();
 
 const allowedOrigins = [
-  "http://localhost:5173",
+  "http://localhost:5173","https://vidyora-amber.vercel.app",
   process.env.CLIENT_URL, 
 ];
 
