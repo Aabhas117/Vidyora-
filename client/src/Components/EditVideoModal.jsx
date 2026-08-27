@@ -2,15 +2,14 @@ import { useState, useRef, useEffect } from "react";
 import { X } from "lucide-react";
 
 const CATEGORIES = ["Education", "Technology", "Gaming", "Music", "Entertainment", "Sports", "News", "Other"];
-const VISIBILITY_OPTIONS = ["Public", "Unlisted", "Private"];
 
 export default function EditVideoModal({ video, onSave, onClose }) {
   const [title, setTitle] = useState(video.title);
   const [description, setDescription] = useState(video.description || "");
   const [category, setCategory] = useState(video.category);
-  const [visibility, setVisibility] = useState(video.visibility || "Public");
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [thumbnailPreview, setThumbnailPreview] = useState(video.thumbnail);
+  const [saving, setSaving] = useState(false);
   const thumbnailInputRef = useRef(null);
 
   useEffect(() => {
@@ -26,16 +25,20 @@ export default function EditVideoModal({ video, onSave, onClose }) {
     setThumbnailPreview(URL.createObjectURL(file));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title.trim()) return;
-    onSave(video.id, {
-      title: title.trim(),
-      description: description.trim(),
-      category,
-      visibility,
-      thumbnail: thumbnailPreview,
-    });
+    setSaving(true);
+    try {
+      await onSave(video.id, {
+        title: title.trim(),
+        description: description.trim(),
+        category,
+        thumbnailFile, // real File object, or null if unchanged
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -71,40 +74,31 @@ export default function EditVideoModal({ video, onSave, onClose }) {
             className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-violet-500 resize-none"
           />
 
-          <div className="grid grid-cols-2 gap-3">
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-violet-500"
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-            <select
-              value={visibility}
-              onChange={(e) => setVisibility(e.target.value)}
-              className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-violet-500"
-            >
-              {VISIBILITY_OPTIONS.map((v) => (
-                <option key={v} value={v}>{v}</option>
-              ))}
-            </select>
-          </div>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-violet-500"
+          >
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
 
           <div className="flex justify-end gap-2 mt-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-zinc-700 text-sm text-zinc-300 hover:border-zinc-500 transition-colors"
+              disabled={saving}
+              className="px-4 py-2 rounded-lg border border-zinc-700 text-sm text-zinc-300 hover:border-zinc-500 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 rounded-lg bg-violet-500 text-white text-sm font-medium hover:bg-violet-400 transition-colors"
+              disabled={saving}
+              className="px-4 py-2 rounded-lg bg-violet-500 text-white text-sm font-medium hover:bg-violet-400 transition-colors disabled:opacity-60"
             >
-              Save Changes
+              {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>
