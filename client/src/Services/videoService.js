@@ -25,6 +25,10 @@ export async function getVideoById(id) {
   return mapVideo(video);
 }
 
+export async function registerView(id) {
+  await api.post(`/videos/${id}/view`);
+}
+
 export async function updateVideoOnServer(id, updates) {
   const formData = new FormData();
 

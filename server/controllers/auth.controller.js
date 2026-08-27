@@ -130,8 +130,7 @@ async function loginUser(req, res) {
 }
 
 async function getMe(req, res) {
-  // req.user is attached by auth.middleware.js before this runs
-  return res.status(200).json({ user: toSafeUser(req.user) });
+  return res.status(200).json({ user: req.user ? toSafeUser(req.user) : null });
 }
 
 async function logoutUser(req, res) {

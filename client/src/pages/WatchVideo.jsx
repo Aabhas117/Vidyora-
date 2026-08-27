@@ -16,8 +16,10 @@ export default function WatchVideo() {
 
   const [video, setVideo] = useState(null);
   const [upNext, setUpNext] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [loadedVideoId, setLoadedVideoId] = useState(null);
+  const [errorVideoId, setErrorVideoId] = useState(null);
+  const loading = loadedVideoId !== videoId && errorVideoId !== videoId;
+  const error = errorVideoId === videoId;
 
   // Persists across React Strict Mode's double-invoke in development,
   // so a view is only registered once per distinct videoId visit.
@@ -25,13 +27,12 @@ export default function WatchVideo() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    setError(false);
 
     getVideoById(videoId)
       .then((data) => {
         if (cancelled) return;
         setVideo(data);
+        setLoadedVideoId(videoId);
         addToHistory(data);
 
         if (hasRegisteredView.current !== videoId) {
@@ -40,10 +41,7 @@ export default function WatchVideo() {
         }
       })
       .catch(() => {
-        if (!cancelled) setError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setErrorVideoId(videoId);
       });
 
     getVideos()
@@ -85,7 +83,7 @@ export default function WatchVideo() {
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-8">
-      <div className="order-1 xl:order-none xl:col-start-1 xl:row-start-1">
+      <div className="order-1 xl:order-0 xl:col-start-1 xl:row-start-1">
         <VideoPlayer src={video.videoUrl} poster={video.thumbnail} />
 
         <h1 className="text-lg font-semibold text-zinc-100 mt-4">
@@ -137,7 +135,7 @@ export default function WatchVideo() {
         </div>
       </div>
 
-      <div className="order-2 xl:order-none xl:col-start-2 xl:row-start-1 xl:row-span-2">
+      <div className="order-2 xl:order-0 xl:col-start-2 xl:row-start-1 xl:row-span-2">
         <h2 className="text-sm font-semibold text-zinc-400 mb-4">Up Next</h2>
         <div className="flex flex-col gap-4">
           {upNext.map((v) => (
@@ -164,7 +162,7 @@ export default function WatchVideo() {
         </div>
       </div>
 
-      <div className="order-3 xl:order-none xl:col-start-1 xl:row-start-2 border-t border-zinc-800 pt-6 mt-2">
+      <div className="order-3 xl:order-0 xl:col-start-1 xl:row-start-2 border-t border-zinc-800 pt-6 mt-2">
         <CommentList videoId={videoId} />
       </div>
     </div>

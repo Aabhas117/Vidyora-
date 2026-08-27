@@ -43,7 +43,7 @@ export function AuthProvider({ children }) {
     } catch (err) {
       const message = err.response?.data?.message || "Couldn't create your account. Try again.";
       setError(message);
-      throw new error(message);
+      throw new Error(message, { cause: err });
     }
   }, []);
 
@@ -56,7 +56,7 @@ export function AuthProvider({ children }) {
     } catch (err) {
       const message = err.response?.data?.message || "Incorrect email or password.";
       setError(message);
-      throw new error(message);
+      throw new Error(message, { cause: err });
     }
   }, []);
 

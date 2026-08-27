@@ -1,6 +1,27 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
+async function optionalAuth(req, res, next) {
+  try {
+    const token = req.cookies?.accessToken;
+
+    if (!token) {
+      return next();
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.userId);
+
+    if (user) {
+      req.user = user;
+    }
+
+    return next();
+  } catch {
+    return next();
+  }
+}
+
 async function requireAuth(req, res, next) {
   try {
     const token = req.cookies?.accessToken;
@@ -29,4 +50,4 @@ async function requireAuth(req, res, next) {
   }
 }
 
-module.exports = { requireAuth };
+module.exports = { optionalAuth, requireAuth };
