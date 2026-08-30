@@ -3,6 +3,7 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
 const dns = require("dns");
+const connectDB = require("./config/db");
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 dotenv.config();
 
@@ -21,7 +22,7 @@ app.use(
   cors({
     origin: allowedOrigins,
     credentials: true,
-  })
+  }),
 );
 
 // Health check
@@ -49,6 +50,14 @@ app.use("/api/v1/comments", commentRoutes);
 app.use("/api/v1/history", historyRoutes);
 app.use("/api/v1/playlists", playlistRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
+
+if (require.main === module) {
+  const PORT = process.env.PORT || 8000;
+  connectDB();
+  app.listen(PORT, () => {
+    console.log(`Vidyora server running on http://localhost:${PORT}`);
+  });
+}
 
 // Export for Vercel
 module.exports = app;
