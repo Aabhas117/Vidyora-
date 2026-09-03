@@ -28,7 +28,7 @@ function setAuthCookie(res, token) {
   res.cookie("accessToken", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production", // false on localhost so the cookie isn't dropped over plain http
-    sameSite: "lax", // allows the cookie on same-site navigation/requests during local dev
+    sameSite: "none", // allows the cookie on same-site navigation/requests during local dev
     maxAge: 24 * 60 * 60 * 1000, // 1 day, in ms — keep in sync with JWT_EXPIRES_IN
   });
 }
