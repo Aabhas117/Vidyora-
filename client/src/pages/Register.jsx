@@ -58,9 +58,9 @@ export default function Register() {
           onSubmit={handleSubmit}
           className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col gap-4"
         >
-          {(error || localError) && (
+          {(error) && (
             <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
-              {localError || error}
+              {error}
             </p>
           )}
 
