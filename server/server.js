@@ -33,6 +33,14 @@ app.use(
   }),
 );
 
+app.get('/', (req, res)=>{
+    res.status(200).json({
+      success: true,
+      message: "running,"
+    })
+  }
+)
+
 // Health check
 app.get("/api/health", (req, res) => {
   res.status(200).json({
