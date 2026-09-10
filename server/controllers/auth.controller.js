@@ -25,10 +25,11 @@ function generateToken(userId) {
 }
 
 function setAuthCookie(res, token) {
+  const isProd = process.env.NODE_ENV === "production";
   res.cookie("accessToken", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // false on localhost so the cookie isn't dropped over plain http
-    sameSite: "none", // allows the cookie on same-site navigation/requests during local dev
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     maxAge: 24 * 60 * 60 * 1000, // 1 day, in ms — keep in sync with JWT_EXPIRES_IN
   });
 }
@@ -134,10 +135,11 @@ async function getMe(req, res) {
 }
 
 async function logoutUser(req, res) {
+  const isProd = process.env.NODE_ENV === "production";
   res.clearCookie("accessToken", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
   });
   return res.status(200).json({ message: "Logged out successfully." });
 }

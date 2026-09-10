@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Users } from "lucide-react";
 import { useAuth } from "../Hooks/useAuth";
-import { useUserVideos } from "../Hooks/useUserVideos";
 import { getVideos } from "../Services/videoService";
 import SubscriptionButton from "../Components/SubscriptionButton";
 import VideoGrid from "../Components/VideoGrid";
@@ -10,7 +9,6 @@ import VideoGrid from "../Components/VideoGrid";
 export default function Channel() {
   const { channelId } = useParams();
   const { user, isAuthenticated } = useAuth();
-  const { userVideos } = useUserVideos();
 
   const [allVideos, setAllVideos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,15 +35,11 @@ export default function Channel() {
     };
   }, []);
 
-  const isOwnChannel = isAuthenticated && user._id.toString()  === channelId;
+  const isOwnChannel = Boolean(isAuthenticated && user?._id?.toString() === channelId);
 
-  // Mock-uploaded videos (from the still-mock Upload flow) don't have a real
-  // ownerId yet, so they're tagged with the current user's real ID here so
-  // they line up correctly when viewing your own channel.
-  const taggedUserVideos = userVideos.map((v) => ({ ...v, ownerId: user?._id }));
-
-  const combinedVideos = isOwnChannel ? [...taggedUserVideos, ...allVideos] : allVideos;
-  const channelVideos = combinedVideos.filter((v) => v.ownerId === channelId);
+  const channelVideos = allVideos.filter(
+    (v) => (v.ownerId || v.channelId) === channelId
+  );
 
   if (loading) {
     return <p className="text-sm text-zinc-500 text-center py-16">Loading channel...</p>;

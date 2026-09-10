@@ -1,6 +1,10 @@
 export function mapVideo(backendVideo) {
   if (!backendVideo) return null;
 
+  const ownerId =
+    backendVideo.owner?._id?.toString() ||
+    (typeof backendVideo.owner === "string" ? backendVideo.owner : null);
+
   return {
     id: backendVideo._id,
     title: backendVideo.title,
@@ -14,9 +18,9 @@ export function mapVideo(backendVideo) {
     // failed to populate (e.g. deleted user) — always a safe string.
     channel: backendVideo.owner?.fullName || backendVideo.owner?.username || "Unknown Channel",
     avatar: backendVideo.owner?.avatar || "",
-    // The real MongoDB User._id — this is what channel links/subscriptions
-    // should use, never a slugified name.
-    channelId: backendVideo.owner?._id || null,
+    // The real MongoDB User._id — this is what channel links/subscriptions use.
+    channelId: ownerId,
+    ownerId: ownerId,
   };
 }
 

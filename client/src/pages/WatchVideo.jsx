@@ -91,33 +91,40 @@ export default function WatchVideo() {
         </h1>
 
         <div className="flex flex-wrap items-center justify-between gap-4 mt-3">
-          <div className="flex items-center gap-3">
-            <Link to={`/channel/${video.ownerId}`}>
-              <Avatar
-                src={video.avatar}
-                name={video.channel}
-                className="h-11 w-11"
-              />
-            </Link>
-            <div>
-              <Link
-                to={`/channel/${video.ownerId}`}
-                className="text-sm font-medium text-zinc-100 hover:text-violet-400 transition-colors"
-              >
-                {video.channel}
-              </Link>
-              <p className="text-xs text-zinc-500">
-                {video.views} · {video.uploaded}
-              </p>
-            </div>
-            <SubscriptionButton
-              channel={{
-                id: video.ownerId,
-                name: video.channel,
-                avatar: video.avatar,
-              }}
-            />
-          </div>
+          {(() => {
+            const channelOwnerId = video.ownerId || video.channelId;
+            return (
+              <div className="flex items-center gap-3">
+                <Link to={channelOwnerId ? `/channel/${channelOwnerId}` : "#"}>
+                  <Avatar
+                    src={video.avatar}
+                    name={video.channel}
+                    className="h-11 w-11"
+                  />
+                </Link>
+                <div>
+                  <Link
+                    to={channelOwnerId ? `/channel/${channelOwnerId}` : "#"}
+                    className="text-sm font-medium text-zinc-100 hover:text-violet-400 transition-colors"
+                  >
+                    {video.channel}
+                  </Link>
+                  <p className="text-xs text-zinc-500">
+                    {video.views} · {video.uploaded}
+                  </p>
+                </div>
+                {channelOwnerId && (
+                  <SubscriptionButton
+                    channel={{
+                      id: channelOwnerId,
+                      name: video.channel,
+                      avatar: video.avatar,
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })()}
 
           <div className="flex items-center gap-3">
             <LikeButton video={video} />

@@ -36,7 +36,9 @@ export default function Subscriptions() {
   }, []);
 
   const subscribedIds = subscriptions.map((c) => c.id);
-  const subscribedVideos = allVideos.filter((v) => subscribedIds.includes(v.ownerId));
+  const subscribedVideos = allVideos.filter((v) =>
+    subscribedIds.includes(v.ownerId || v.channelId)
+  );
 
   if (subscriptions.length === 0) {
     return (

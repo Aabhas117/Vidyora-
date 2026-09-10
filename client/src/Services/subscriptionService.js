@@ -1,30 +1,34 @@
+import api from "./api";
+
 /**
- * MOCK subscription persistence — localStorage only, no backend yet.
+ * Real backend-backed subscription service.
  *
- * Later this becomes:
- *   GET    /api/v1/subscriptions
- *   POST   /api/v1/subscriptions/:channelId
- *   DELETE /api/v1/subscriptions/:channelId
- *
- * SubscriptionContext.jsx never needs to change when that happens —
- * it only calls loadSubscriptions/saveSubscriptions and updates state.
+ * GET    /subscriptions
+ * POST   /subscriptions/:channelId
+ * DELETE /subscriptions/:channelId
  */
-const STORAGE_PREFIX = "vidyora_subscriptions_";
 
-function getKey(userId) {
-  return `${STORAGE_PREFIX}${userId}`;
-}
-
-export function loadSubscriptions(userId) {
-  if (!userId) return [];
+export async function loadSubscriptions() {
   try {
-    return JSON.parse(localStorage.getItem(getKey(userId))) || [];
+    const res = await api.get("/subscriptions");
+    return (res.data.subscriptions || []).map((sub) => {
+      const channelObj = sub.channel || {};
+      return {
+        id: channelObj._id || sub.channel,
+        name: channelObj.fullName || channelObj.username || "Unknown Channel",
+        avatar: channelObj.avatar || "",
+        username: channelObj.username || "",
+      };
+    });
   } catch {
     return [];
   }
 }
 
-export function saveSubscriptions(userId, subscriptions) {
-  if (!userId) return;
-  localStorage.setItem(getKey(userId), JSON.stringify(subscriptions));
+export async function subscribeToChannelOnServer(channelId) {
+  await api.post(`/subscriptions/${channelId}`);
+}
+
+export async function unsubscribeFromChannelOnServer(channelId) {
+  await api.delete(`/subscriptions/${channelId}`);
 }
