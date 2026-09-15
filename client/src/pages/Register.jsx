@@ -26,11 +26,19 @@ export default function Register() {
     if (file) setAvatarPreview(URL.createObjectURL(file));
   };
 
+  const [localError, setLocalError] = useState(null);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLocalError(null);
+
+    if (form.password !== form.confirmPassword) {
+      setLocalError("Passwords do not match.");
+      return;
+    }
+
     setSubmitting(true);
     try {
-      // avatar intentionally omitted — no backend support for it yet on register
       await register({
         fullName: form.fullName,
         username: form.username,
@@ -58,9 +66,9 @@ export default function Register() {
           onSubmit={handleSubmit}
           className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 flex flex-col gap-4"
         >
-          {(error) && (
+          {(error || localError) && (
             <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
-              {error}
+              {localError || error}
             </p>
           )}
 

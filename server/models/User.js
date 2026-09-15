@@ -26,6 +26,7 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true, // stored hashed — never the plain password
+      select: false,
     },
     avatar: {
       type: String,

@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const fs = require("fs/promises");
 const Video = require("../models/Video");
+const ViewEvent = require("../models/ViewEvent");
 const cloudinary = require("../config/cloudinary");
 
 const OWNER_PUBLIC_FIELDS = "_id username fullName avatar";
@@ -42,9 +43,6 @@ async function getVideoById(req, res) {
       return res.status(400).json({ message: "Invalid video ID." });
     }
 
-    // Increment view count atomically, then return the updated document.
-    // Using findByIdAndUpdate with $inc avoids a race condition that a
-    // separate find-then-save would have under concurrent requests.
     const video = await Video.findByIdAndUpdate(
       id,
       { $inc: { views: 1 } },
@@ -54,6 +52,13 @@ async function getVideoById(req, res) {
     if (!video) {
       return res.status(404).json({ message: "Video not found." });
     }
+
+    // Safely record analytics ViewEvent
+    ViewEvent.create({
+      video: video._id,
+      user: req.user?._id || null,
+      watchedAt: new Date(),
+    }).catch((err) => console.error("ViewEvent log error:", err.message));
 
     return res.status(200).json({ video });
   } catch (error) {
@@ -77,6 +82,13 @@ async function registerView(req, res) {
     if (!video) {
       return res.status(404).json({ message: "Video not found." });
     }
+
+    // Safely record analytics ViewEvent
+    ViewEvent.create({
+      video: video._id,
+      user: req.user?._id || null,
+      watchedAt: new Date(),
+    }).catch((err) => console.error("ViewEvent log error:", err.message));
 
     return res.status(200).json({ views: video.views });
   } catch (error) {
@@ -113,7 +125,20 @@ async function createVideo(req, res) {
       return res.status(400).json({ message: "Video file is required." });
     }
     if (!thumbnailFile) {
+      await cleanupTempFile(videoFile.path);
       return res.status(400).json({ message: "Thumbnail is required." });
+    }
+
+    const { validateFileSignature } = require("../middleware/upload.middleware");
+    if (!validateFileSignature(videoFile.path, "video")) {
+      await cleanupTempFile(videoFile.path);
+      await cleanupTempFile(thumbnailFile.path);
+      return res.status(400).json({ message: "Invalid video file content. File appears to be corrupted or spoofed." });
+    }
+    if (!validateFileSignature(thumbnailFile.path, "thumbnail")) {
+      await cleanupTempFile(videoFile.path);
+      await cleanupTempFile(thumbnailFile.path);
+      return res.status(400).json({ message: "Invalid thumbnail file content. File appears to be corrupted or spoofed." });
     }
 
     let videoResult;

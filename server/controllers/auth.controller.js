@@ -3,10 +3,13 @@ const jwt = require("jsonwebtoken");
 const fs = require("fs/promises");
 const User = require("../models/User");
 const cloudinary = require("../config/cloudinary");
+const { validateFileSignature } = require("../middleware/upload.middleware");
 
-const MIN_PASSWORD_LENGTH = 6;
+const MIN_PASSWORD_LENGTH = 8;
+const PASSWORD_COMPLEXITY_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&^#()_+\-=\[\]{}|;:',.<>\/]).{8,}$/;
 
 function toSafeUser(user) {
+  if (!user) return null;
   return {
     _id: user._id,
     fullName: user.fullName,
@@ -30,7 +33,7 @@ function setAuthCookie(res, token) {
     httpOnly: true,
     secure: isProd,
     sameSite: isProd ? "none" : "lax",
-    maxAge: 24 * 60 * 60 * 1000, // 1 day, in ms — keep in sync with JWT_EXPIRES_IN
+    maxAge: 24 * 60 * 60 * 1000, // 1 day, in ms
   });
 }
 
@@ -59,10 +62,10 @@ async function registerUser(req, res) {
     if (!password) {
       return res.status(400).json({ message: "Password is required." });
     }
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      return res
-        .status(400)
-        .json({ message: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` });
+    if (password.length < MIN_PASSWORD_LENGTH || !PASSWORD_COMPLEXITY_REGEX.test(password)) {
+      return res.status(400).json({
+        message: "Password must be at least 8 characters long and include an uppercase letter, lowercase letter, number, and special character.",
+      });
     }
 
     const normalizedUsername = username.trim().toLowerCase();
@@ -106,11 +109,9 @@ async function loginUser(req, res) {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
-    const user = await User.findOne({ email: normalizedEmail });
+    // Explicitly select +password since User schema hides it by default
+    const user = await User.findOne({ email: normalizedEmail }).select("+password");
 
-    // Same generic message whether the account doesn't exist or the password
-    // is wrong — this avoids confirming to an attacker whether a given email
-    // is registered at all.
     if (!user) {
       return res.status(401).json({ message: "Incorrect email or password." });
     }
@@ -148,7 +149,7 @@ async function updateMe(req, res) {
   const avatarFile = req.file;
 
   try {
-    const user = req.user; // attached by requireAuth
+    const user = req.user;
     const { fullName, username, email } = req.body;
 
     if (fullName !== undefined) {
@@ -186,21 +187,22 @@ async function updateMe(req, res) {
       user.email = normalizedEmail;
     }
 
-    // Optional avatar replacement — upload new before touching the old,
-    // same "upload-then-delete-old" pattern used for video/thumbnail updates.
     if (avatarFile) {
+      // Validate file signature before Cloudinary upload
+      if (!validateFileSignature(avatarFile.path, "avatar")) {
+        await cleanupTempFile(avatarFile.path);
+        return res.status(400).json({ message: "Invalid avatar file content. File appears to be corrupted or spoofed." });
+      }
+
       let uploadResult;
       try {
         uploadResult = await cloudinary.uploader.upload(avatarFile.path, {
           resource_type: "image",
           folder: "vidyora/avatars",
         });
-      } catch (err) {
+      } finally {
         await cleanupTempFile(avatarFile.path);
-        console.error("Avatar upload error:", err.message);
-        return res.status(500).json({ message: "Failed to upload avatar. Please try again." });
       }
-      await cleanupTempFile(avatarFile.path);
       user.avatar = uploadResult.secure_url;
     }
 

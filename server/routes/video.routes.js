@@ -8,15 +8,15 @@ const {
   getMyVideos,
   registerView,
 } = require("../controllers/video.controller");
-const { requireAuth } = require("../middleware/auth.middleware");
+const { optionalAuth, requireAuth } = require("../middleware/auth.middleware");
 const upload = require("../middleware/upload.middleware");
 
 const router = express.Router();
 
 router.get("/", getAllVideos);
 router.get("/my", requireAuth, getMyVideos); // must come before /:id
-router.get("/:id", getVideoById);
-router.post("/:id/view", registerView);
+router.get("/:id", optionalAuth, getVideoById);
+router.post("/:id/view", optionalAuth, registerView);
 
 router.post(
   "/",

@@ -215,12 +215,20 @@ export default function Profile() {
               </button>
             </div>
 
-            <button
-              onClick={() => setEditing(true)}
-              className="mt-6 px-5 py-2 rounded-full bg-zinc-800 border border-zinc-700 text-sm text-zinc-300 hover:border-violet-500/50 hover:text-violet-400 transition-colors"
-            >
-              Edit Profile
-            </button>
+            <div className="flex flex-wrap gap-3 mt-6">
+              <button
+                onClick={() => setEditing(true)}
+                className="px-5 py-2 rounded-full bg-zinc-800 border border-zinc-700 text-sm text-zinc-300 hover:border-violet-500/50 hover:text-violet-400 transition-colors"
+              >
+                Edit Profile
+              </button>
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="px-5 py-2 rounded-full bg-violet-500/10 border border-violet-500/30 text-sm font-medium text-violet-400 hover:bg-violet-500/20 transition-colors flex items-center gap-2"
+              >
+                Creator Dashboard →
+              </button>
+            </div>
           </>
         )}
       </div>

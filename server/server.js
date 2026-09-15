@@ -4,22 +4,37 @@ const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
 const dns = require("dns");
 const connectDB = require("./config/db");
+const { securityHeaders, mongoSanitize } = require("./middleware/security.middleware");
+const { apiLimiter } = require("./middleware/rateLimit.middleware");
+
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 dotenv.config();
 
+// Assert JWT_SECRET on startup
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  console.error("FATAL: JWT_SECRET must be defined in environment and be at least 32 characters long.");
+  if (process.env.NODE_ENV === "production") {
+    process.exit(1);
+  }
+}
+
 const app = express();
+
+// Trust reverse proxy (Vercel / Render / Nginx) for correct client IP detection
+app.set("trust proxy", 1);
+
+// Security Headers & NoSQL Input Sanitization
+app.use(securityHeaders);
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(cookieParser());
+app.use(mongoSanitize);
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "http://localhost:5174",
-  "http://127.0.0.1:5173",
-  "http://127.0.0.1:5174",
   "https://vidyora-amber.vercel.app",
   process.env.CLIENT_URL,
 ].filter(Boolean);
-
-app.use(express.json());
-app.use(cookieParser());
 
 app.use(
   cors({
@@ -35,13 +50,15 @@ app.use(
   }),
 );
 
-app.get('/', (req, res)=>{
-    res.status(200).json({
-      success: true,
-      message: "running,"
-    })
-  }
-)
+// Global API rate limiting for /api/v1
+app.use("/api/v1", apiLimiter);
+
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Vidyora API running",
+  });
+});
 
 // Health check
 app.get("/api/health", (req, res) => {
@@ -60,6 +77,7 @@ const commentRoutes = require("./routes/comment.routes");
 const historyRoutes = require("./routes/history.routes");
 const playlistRoutes = require("./routes/playlist.routes");
 const subscriptionRoutes = require("./routes/subscription.routes");
+const analyticsRoutes = require("./routes/analytics.routes");
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/videos", videoRoutes);
@@ -68,6 +86,16 @@ app.use("/api/v1/comments", commentRoutes);
 app.use("/api/v1/history", historyRoutes);
 app.use("/api/v1/playlists", playlistRoutes);
 app.use("/api/v1/subscriptions", subscriptionRoutes);
+app.use("/api/v1/analytics", analyticsRoutes);
+
+// Safe global error handler (hides stack traces and sensitive details in production)
+app.use((err, req, res, _next) => {
+  console.error("Unhandled error:", err.message);
+  const isProd = process.env.NODE_ENV === "production";
+  return res.status(err.status || 500).json({
+    message: isProd ? "Something went wrong. Please try again." : err.message || "Internal server error",
+  });
+});
 
 if (require.main === module) {
   const PORT = process.env.PORT || 8000;

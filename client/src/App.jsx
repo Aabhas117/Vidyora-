@@ -22,6 +22,7 @@ import { SubscriptionProvider } from "./Context/SubscriptionContext";
 import Channel from "./pages/Channel";
 import Subscriptions from "./pages/Subscriptions";
 import Trending from "./pages/Trending";
+import Dashboard from "./pages/Dashboard";
 import { UserVideoProvider } from "./Context/UserVideoContext";
 
 export default function App() {
@@ -60,6 +61,14 @@ export default function App() {
                           />
 
                           {/* Protected */}
+                          <Route
+                            path="/dashboard"
+                            element={
+                              <ProtectedRoute>
+                                <Dashboard />
+                              </ProtectedRoute>
+                            }
+                          />
                           <Route
                             path="/profile"
                             element={
