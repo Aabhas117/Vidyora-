@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./Context/AuthContext";
+import { ThemeProvider } from "./Context/ThemeContext";
 import Navbar from "./Components/Navbar";
 import Sidebar from "./Components/Sidebar";
 import ProtectedRoute from "./Components/ProtectedRoute";
@@ -30,12 +31,13 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <HistoryProvider>
-          <LikeProvider>
-            <PlaylistProvider>
-              <SubscriptionProvider>
-                <UserVideoProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <HistoryProvider>
+            <LikeProvider>
+              <PlaylistProvider>
+                <SubscriptionProvider>
+                  <UserVideoProvider>
                   <div className="min-h-screen bg-zinc-950">
                     <Navbar onMenuClick={() => setSidebarOpen((o) => !o)} />
                     <div className="md:flex">
@@ -135,6 +137,7 @@ export default function App() {
           </LikeProvider>
         </HistoryProvider>
       </AuthProvider>
-    </BrowserRouter>
+    </ThemeProvider>
+  </BrowserRouter>
   );
 }

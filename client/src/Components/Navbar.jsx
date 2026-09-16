@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Search as SearchIcon, Menu, LogOut, Upload } from "lucide-react";
 import { useAuth } from "../Hooks/useAuth";
+import ThemeToggle from "./ThemeToggle";
 
 export default function Navbar({ onMenuClick }) {
   const { user, isAuthenticated, logout } = useAuth();
@@ -52,6 +53,7 @@ export default function Navbar({ onMenuClick }) {
         </form>
 
         <div className="ml-auto flex items-center gap-3">
+          <ThemeToggle />
           {isAuthenticated ? (
             <>
               <Link
@@ -108,3 +110,4 @@ export default function Navbar({ onMenuClick }) {
     </header>
   );
 }
+
