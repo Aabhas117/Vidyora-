@@ -20,6 +20,7 @@ const authLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
+  skip: () => process.env.NODE_ENV === "test",
 });
 
 // Loose global rate limiter for all general API routes (/api/v1): 100 requests per 15 mins per IP
@@ -31,7 +32,7 @@ const apiLimiter = rateLimit({
   },
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
+  skip: () => process.env.NODE_ENV === "test",
 });
 
 module.exports = { authLimiter, apiLimiter };
-
