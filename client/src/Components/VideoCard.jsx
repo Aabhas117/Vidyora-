@@ -7,7 +7,7 @@ export default function VideoCard({ video }) {
   return (
     <div className="group cursor-pointer">
       <Link to={`/watch/${id}`} className="block">
-        <div className="aspect-video w-full overflow-hidden rounded-xl bg-zinc-800 border border-zinc-800 group-hover:border-violet-500/50 transition-colors">
+        <div className="aspect-video w-full overflow-hidden rounded-xl bg-zinc-850 border border-zinc-800/80 group-hover:border-violet-500/50 transition-colors">
           {thumbnail ? (
             <img
               src={thumbnail}

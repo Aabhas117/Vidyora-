@@ -18,7 +18,7 @@ export default function Navbar({ onMenuClick }) {
   };
 
   return (
-    <header className="sticky top-0 z-40 h-16 bg-zinc-950/95 backdrop-blur border-b border-zinc-800">
+    <header className="sticky top-0 z-40 h-16 bg-zinc-900/95 backdrop-blur border-b border-zinc-800/80">
       <div className="h-full flex items-center gap-4 px-4">
         <button
           onClick={onMenuClick}
@@ -34,7 +34,7 @@ export default function Navbar({ onMenuClick }) {
 
         <form
           onSubmit={handleSearchSubmit}
-          className="flex-1 max-w-xl mx-auto hidden sm:flex items-center bg-zinc-900 border border-zinc-800 rounded-full pl-4 pr-1 py-1 focus-within:border-violet-500/60 transition-colors"
+          className="flex-1 max-w-xl mx-auto hidden sm:flex items-center bg-zinc-850 border border-zinc-800/80 rounded-full pl-4 pr-1 py-1 focus-within:border-violet-500/60 transition-colors"
         >
           <input
             type="text"
@@ -45,7 +45,7 @@ export default function Navbar({ onMenuClick }) {
           />
           <button
             type="submit"
-            className="p-2 rounded-full bg-zinc-800 text-zinc-400 hover:text-violet-400 transition-colors"
+            className="p-2 rounded-full bg-zinc-800/70 text-zinc-400 hover:text-violet-400 transition-colors"
             aria-label="Search"
           >
             <SearchIcon size={16} />
@@ -58,7 +58,7 @@ export default function Navbar({ onMenuClick }) {
             <>
               <Link
                 to="/upload"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-zinc-700 text-sm text-zinc-300 hover:border-violet-500/50 hover:text-violet-400 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-850 border border-zinc-700/80 text-sm text-zinc-300 hover:border-violet-500/50 hover:text-violet-400 transition-colors"
               >
                 <Upload size={16} />
                 <span className="hidden sm:inline">Upload</span>
