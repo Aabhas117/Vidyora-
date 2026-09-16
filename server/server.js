@@ -2,20 +2,26 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
-const dns = require("dns");
 const connectDB = require("./config/db");
 const { securityHeaders, mongoSanitize } = require("./middleware/security.middleware");
 const { apiLimiter } = require("./middleware/rateLimit.middleware");
 
-dns.setServers(["1.1.1.1", "8.8.8.8"]);
 dotenv.config();
 
-// Assert JWT_SECRET on startup
-if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
-  console.error("FATAL: JWT_SECRET must be defined in environment and be at least 32 characters long.");
-  if (process.env.NODE_ENV === "production") {
-    process.exit(1);
+if (!process.env.VERCEL) {
+  try {
+    const dns = require("dns");
+    dns.setServers(["1.1.1.1", "8.8.8.8"]);
+  } catch {
+    // Ignore DNS setServers failure in serverless or restricted network environments
   }
+}
+
+
+
+// Validate JWT_SECRET on startup without killing serverless process
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  console.warn("WARNING: JWT_SECRET should be defined in environment and be at least 32 characters long.");
 }
 
 const app = express();
@@ -30,6 +36,19 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 app.use(mongoSanitize);
 
+// Ensure MongoDB connection before handling API requests
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Database connection middleware error:", error.message);
+    return res.status(500).json({
+      message: "Database connection failed.",
+    });
+  }
+});
+
 const allowedOrigins = [
   "http://localhost:5173",
   "https://vidyora-amber.vercel.app",
@@ -39,7 +58,12 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
         callback(null, true);
         return;
       }
@@ -99,10 +123,15 @@ app.use((err, req, res, _next) => {
 
 if (require.main === module) {
   const PORT = process.env.PORT || 8000;
-  connectDB();
-  app.listen(PORT, () => {
-    console.log(`Vidyora server running on http://localhost:${PORT}`);
-  });
+  connectDB()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`Vidyora server running on http://localhost:${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error("Server startup failed:", err.message);
+    });
 }
 
 // Export for Vercel

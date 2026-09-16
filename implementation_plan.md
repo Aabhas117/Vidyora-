@@ -1,81 +1,115 @@
-# Implementation Plan - Vidyora Security Hardening Phase
+# VIDYORA — Testing, Docker, CI/CD & Swagger/OpenAPI Plan
 
-Implement comprehensive application security hardening across 8 core operational areas: Rate Limiting, Security Headers, Input Sanitization, Password Policy, JWT Hardening, File Upload Security, Authorization Auditing, and Secrets Management.
+This implementation plan details the setup for comprehensive automated testing (Backend & Frontend), Docker containerization, GitHub Actions CI/CD workflows, and Swagger/OpenAPI interactive documentation.
 
 ## User Review Required
 
 > [!IMPORTANT]
-> - **Zero Breaking Changes**: Existing CORS, cookie authentication (`withCredentials: true`), media streaming, and API contracts remain 100% functional.
-> - **Password Policy Update**: Registration will now enforce strong passwords (min 8 chars, uppercase, lowercase, digit, special character).
-> - **Database Security**: User password hashes are shielded at the Mongoose schema level using `select: false`.
+> - **Backend Testing**: Jest + Supertest + `mongodb-memory-server` for isolated, zero-dependency database integration testing.
+> - **Frontend Testing**: Vitest + React Testing Library + `@testing-library/jest-dom` + `jsdom` for testing AuthContext, ProtectedRoute, and core UI components.
+> - **Docker & Compose**: Production multi-stage Dockerfiles for client and server, backed by `docker-compose.yml` with persistent MongoDB storage.
+> - **GitHub Actions CI**: Automated pipeline running linting, backend tests, frontend tests, and production builds on `push` and `pull_request`.
+> - **Swagger API Docs**: Mounted at `/api/docs` exposing interactive OpenAPI 3.0 documentation.
 
 ---
 
 ## Proposed Changes
 
-### Middleware & Server Core (`server`)
+### 1. Backend Testing Infrastructure (`server`)
 
-#### [NEW] [`rateLimit.middleware.js`](file:///c:/Users/aabha/Backend/vidyora/server/middleware/rateLimit.middleware.js)
-- Implement sliding-window rate limiters:
-  - `authLimiter`: 5 attempts per 15 minutes per IP for `/api/v1/auth/login` and `/api/v1/auth/register`.
-  - `apiLimiter`: 200 requests per 15 minutes per IP for all `/api/v1` routes.
-- Returns HTTP 429 with `{ message: "Too many requests. Please try again later." }` and rate limit headers.
+#### [NEW] [`server/jest.config.js`](file:///c:/Users/aabha/Backend/vidyora/server/jest.config.js)
+- Jest configuration for Node environment, setup files, and coverage reporting.
 
-#### [NEW] [`security.middleware.js`](file:///c:/Users/aabha/Backend/vidyora/server/middleware/security.middleware.js)
-- Implement security headers middleware (Helmet equivalent):
-  - Sets `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `X-XSS-Protection: 0`, `Strict-Transport-Security`, `Referrer-Policy: strict-origin-when-cross-origin`.
-  - Sets `Cross-Origin-Resource-Policy: cross-origin` so Cloudinary/video streams load smoothly across origins.
-- Implement `mongoSanitize` middleware:
-  - Recursively strips keys starting with `$` or containing `.` from `req.body`, `req.query`, and `req.params` to neutralize NoSQL injection.
+#### [NEW] [`server/tests/setup.js`](file:///c:/Users/aabha/Backend/vidyora/server/tests/setup.js)
+- Manages `MongoMemoryServer` lifecycle (`beforeAll`, `afterEach`, `afterAll`).
 
-#### [MODIFY] [`server.js`](file:///c:/Users/aabha/Backend/vidyora/server/server.js)
-- Mount `securityHeaders`, `mongoSanitize`, `apiLimiter`, and `authLimiter`.
-- Add startup assertion verifying `JWT_SECRET` is present and at least 32 characters long.
+#### [NEW] [`server/tests/auth.test.js`](file:///c:/Users/aabha/Backend/vidyora/server/tests/auth.test.js)
+- Integration tests for registration, login, logout, `/me`, credential validation, and duplicate handling.
 
----
+#### [NEW] [`server/tests/video.test.js`](file:///c:/Users/aabha/Backend/vidyora/server/tests/video.test.js)
+- CRUD operations, invalid ID handling, and strict owner authorization (403 for non-owners).
 
-### Authentication & Authorization (`server`)
+#### [NEW] [`server/tests/likes.test.js`](file:///c:/Users/aabha/Backend/vidyora/server/tests/likes.test.js)
+- Like/unlike flows, duplicate prevention, and count consistency.
 
-#### [MODIFY] [`User.js`](file:///c:/Users/aabha/Backend/vidyora/server/models/User.js)
-- Set `select: false` on `password` field so user queries never accidentally expose the hashed password in responses.
+#### [NEW] [`server/tests/comments.test.js`](file:///c:/Users/aabha/Backend/vidyora/server/tests/comments.test.js)
+- Comment creation, reading, deletion ownership checks, and validation.
 
-#### [MODIFY] [`auth.controller.js`](file:///c:/Users/aabha/Backend/vidyora/server/controllers/auth.controller.js)
-- Update `registerUser` password validation:
-  - Enforce minimum length of 8 characters.
-  - Enforce presence of uppercase, lowercase, number, and special character.
-- Ensure `loginUser` explicitly selects `+password` for bcrypt comparison while keeping user responses safe via `toSafeUser`.
+#### [NEW] [`server/tests/history.test.js`](file:///c:/Users/aabha/Backend/vidyora/server/tests/history.test.js)
+- Adding/retrieving history items, user isolation, and guest restriction.
+
+#### [NEW] [`server/tests/playlists.test.js`](file:///c:/Users/aabha/Backend/vidyora/server/tests/playlists.test.js)
+- Playlist creation, reading, updating, deleting, and video management with ownership checks.
+
+#### [NEW] [`server/tests/subscriptions.test.js`](file:///c:/Users/aabha/Backend/vidyora/server/tests/subscriptions.test.js)
+- Subscription and unsubscription logic, duplicate prevention, and channel subscriber count integrity.
 
 ---
 
-### File Upload Security (`server`)
+### 2. Frontend Testing Infrastructure (`client`)
 
-#### [MODIFY] [`upload.middleware.js`](file:///c:/Users/aabha/Backend/vidyora/server/middleware/upload.middleware.js)
-- Implement separate file size limits:
-  - 100MB for video files (`video`).
-  - 5MB for thumbnails (`thumbnail`) and avatar images (`avatar`).
-- Enforce strict MIME-type and extension validation for images (`jpeg`, `jpg`, `png`, `webp`) and videos (`mp4`, `webm`, `mov`).
-- Add buffer magic number / signature validation to verify genuine image/video file content.
+#### [NEW] [`client/vitest.config.js`](file:///c:/Users/aabha/Backend/vidyora/client/vitest.config.js)
+- Vitest configuration with `jsdom` environment and test setup.
 
-#### [MODIFY] [`video.controller.js`](file:///c:/Users/aabha/Backend/vidyora/server/controllers/video.controller.js) & [`auth.controller.js`](file:///c:/Users/aabha/Backend/vidyora/server/controllers/auth.controller.js)
-- Wrap all upload handling in `try...finally` blocks to guarantee temporary files on disk are deleted regardless of success or failure.
+#### [NEW] [`client/src/test/setup.js`](file:///c:/Users/aabha/Backend/vidyora/client/src/test/setup.js)
+- `@testing-library/jest-dom` import and automatic cleanup.
+
+#### [NEW] [`client/src/__tests__/AuthContext.test.jsx`](file:///c:/Users/aabha/Backend/vidyora/client/src/__tests__/AuthContext.test.jsx)
+- Tests authentication state, login/logout functions, and user restoration.
+
+#### [NEW] [`client/src/__tests__/ProtectedRoute.test.jsx`](file:///c:/Users/aabha/Backend/vidyora/client/src/__tests__/ProtectedRoute.test.jsx)
+- Tests routing access, loading states, and login redirects.
+
+#### [NEW] [`client/src/__tests__/LikeButton.test.jsx`](file:///c:/Users/aabha/Backend/vidyora/client/src/__tests__/LikeButton.test.jsx)
+- Tests like toggle UI, counts, and API triggers.
+
+#### [NEW] [`client/src/__tests__/CommentList.test.jsx`](file:///c:/Users/aabha/Backend/vidyora/client/src/__tests__/CommentList.test.jsx)
+- Tests comment item rendering, empty states, and author attributes.
+
+#### [NEW] [`client/src/__tests__/VideoCard.test.jsx`](file:///c:/Users/aabha/Backend/vidyora/client/src/__tests__/VideoCard.test.jsx)
+- Tests video metadata, thumbnail rendering, and link targets.
 
 ---
 
-### Frontend UI (`client`)
+### 3. Docker & Infrastructure
 
-#### [MODIFY] [`Register.jsx`](file:///c:/Users/aabha/Backend/vidyora/client/src/pages/Register.jsx)
-- Add password policy hint/tooltip under password input field.
-- Ensure inline error message displays complexity requirements if registration fails.
+#### [NEW] [`server/Dockerfile`](file:///c:/Users/aabha/Backend/vidyora/server/Dockerfile)
+- Node 20 LTS production container for backend API server.
+
+#### [NEW] [`client/Dockerfile`](file:///c:/Users/aabha/Backend/vidyora/client/Dockerfile)
+- Multi-stage build for client Vite React SPA.
+
+#### [NEW] [`docker-compose.yml`](file:///c:/Users/aabha/Backend/vidyora/docker-compose.yml)
+- Services for `client`, `server`, and `mongodb` with volume persistence.
+
+#### [NEW] [`.dockerignore`](file:///c:/Users/aabha/Backend/vidyora/.dockerignore)
+- Excludes development artifacts from Docker contexts.
+
+#### [NEW] [`.env.example`](file:///c:/Users/aabha/Backend/vidyora/.env.example)
+- Production & development environment variable key templates.
+
+---
+
+### 4. GitHub Actions CI/CD Pipeline
+
+#### [NEW] [`.github/workflows/ci.yml`](file:///c:/Users/aabha/Backend/vidyora/.github/workflows/ci.yml)
+- Workflow running on push/PR for backend tests, frontend tests, linting, and build verification.
+
+---
+
+### 5. Swagger / OpenAPI Documentation
+
+#### [NEW] [`server/config/swagger.js`](file:///c:/Users/aabha/Backend/vidyora/server/config/swagger.js) & [`server/swagger.json`](file:///c:/Users/aabha/Backend/vidyora/server/swagger.json)
+- Interactive Swagger UI specification mounted at `/api/docs`.
 
 ---
 
 ## Verification Plan
 
-### Manual Verification Checklist
-1. **Rate Limiting Test**: Send 6 consecutive POST requests to `/api/v1/auth/login`. Verify request #6 returns `429 Too Many Requests`.
-2. **Security Headers Test**: Inspect HTTP response headers for `X-Content-Type-Options: nosniff`, `X-Frame-Options`, and `Cross-Origin-Resource-Policy`.
-3. **NoSQL Injection Test**: Post `{ "email": { "$ne": "" }, "password": { "$ne": "" } }` to `/api/v1/auth/login`. Verify `$` keys are stripped and request is safely rejected.
-4. **Password Policy Test**: Attempt registering with `simple123`. Verify rejection with password complexity error message. Register with `Vidyora@2026!` and verify success.
-5. **File Upload Security Test**: Upload a `.txt` file renamed to `.png` or a 10MB thumbnail. Verify file validation and size limit rejection, and verify temp files are deleted from OS temp dir.
-6. **Authorization Audit Test**: Test modifying or deleting another user's video/comment/playlist/like via API. Verify `403 Forbidden` response.
-7. **Secrets Test**: Verify `.env` is listed in `.gitignore` and no API secrets are exposed in client-side bundles or response payloads.
+### Automated Tests Execution
+1. Run backend tests: `npm test` inside `server/`.
+2. Run frontend tests: `npm test` inside `client/`.
+
+### Documentation Verification
+1. Open `http://localhost:8000/api/docs` and verify Swagger UI loads cleanly.
+
