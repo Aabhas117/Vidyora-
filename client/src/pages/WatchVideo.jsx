@@ -1,6 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { Share2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useAuth } from "../Hooks/useAuth";
 import { useHistory } from "../Hooks/useHistory";
 import { getVideoById, getVideos, registerView } from "../Services/videoService";
 import VideoPlayer from "../Components/VideoPlayer";
@@ -12,7 +13,9 @@ import Avatar from "../Components/Avatar";
 
 export default function WatchVideo() {
   const { videoId } = useParams();
+  const { user } = useAuth();
   const { addToHistory } = useHistory();
+
 
   const [video, setVideo] = useState(null);
   const [upNext, setUpNext] = useState([]);
@@ -93,6 +96,7 @@ export default function WatchVideo() {
         <div className="flex flex-wrap items-center justify-between gap-4 mt-3">
           {(() => {
             const channelOwnerId = video.ownerId || video.channelId;
+            const isOwnVideo = Boolean(user && user._id?.toString() === channelOwnerId?.toString());
             return (
               <div className="flex items-center gap-3">
                 <Link to={channelOwnerId ? `/channel/${channelOwnerId}` : "#"}>
@@ -113,7 +117,7 @@ export default function WatchVideo() {
                     {video.views} · {video.uploaded}
                   </p>
                 </div>
-                {channelOwnerId && (
+                {channelOwnerId && !isOwnVideo && (
                   <SubscriptionButton
                     channel={{
                       id: channelOwnerId,
@@ -125,6 +129,7 @@ export default function WatchVideo() {
               </div>
             );
           })()}
+
 
           <div className="flex items-center gap-3">
             <LikeButton video={video} />

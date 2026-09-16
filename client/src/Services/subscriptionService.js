@@ -13,22 +13,25 @@ export async function loadSubscriptions() {
     const res = await api.get("/subscriptions");
     return (res.data.subscriptions || []).map((sub) => {
       const channelObj = sub.channel || {};
+      const channelId = channelObj._id || sub.channel;
       return {
-        id: channelObj._id || sub.channel,
+        id: channelId ? channelId.toString() : "",
         name: channelObj.fullName || channelObj.username || "Unknown Channel",
         avatar: channelObj.avatar || "",
         username: channelObj.username || "",
       };
-    });
+    }).filter((c) => Boolean(c.id));
   } catch {
     return [];
   }
 }
 
 export async function subscribeToChannelOnServer(channelId) {
-  await api.post(`/subscriptions/${channelId}`);
+  const res = await api.post(`/subscriptions/${channelId}`);
+  return res.data;
 }
 
 export async function unsubscribeFromChannelOnServer(channelId) {
-  await api.delete(`/subscriptions/${channelId}`);
-}
+  const res = await api.delete(`/subscriptions/${channelId}`);
+  return res.data;
+}
