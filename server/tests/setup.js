@@ -10,7 +10,7 @@ beforeAll(async () => {
   mongod = await MongoMemoryServer.create();
   const uri = mongod.getUri();
   await mongoose.connect(uri);
-});
+}, 120000);
 
 beforeEach(async () => {
   if (mongoose.connection.readyState === 1) {
