@@ -43,22 +43,11 @@ async function getVideoById(req, res) {
       return res.status(400).json({ message: "Invalid video ID." });
     }
 
-    const video = await Video.findByIdAndUpdate(
-      id,
-      { $inc: { views: 1 } },
-      { new: true },
-    ).populate("owner", OWNER_PUBLIC_FIELDS);
+    const video = await Video.findById(id).populate("owner", OWNER_PUBLIC_FIELDS);
 
     if (!video) {
       return res.status(404).json({ message: "Video not found." });
     }
-
-    // Safely record analytics ViewEvent
-    ViewEvent.create({
-      video: video._id,
-      user: req.user?._id || null,
-      watchedAt: new Date(),
-    }).catch((err) => console.error("ViewEvent log error:", err.message));
 
     return res.status(200).json({ video });
   } catch (error) {

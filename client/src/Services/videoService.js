@@ -26,7 +26,8 @@ export async function getVideoById(id) {
 }
 
 export async function registerView(id) {
-  await api.post(`/videos/${id}/view`);
+  const res = await api.post(`/videos/${id}/view`);
+  return res.data?.views;
 }
 
 export async function updateVideoOnServer(id, updates) {

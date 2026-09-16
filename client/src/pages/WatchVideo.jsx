@@ -40,7 +40,15 @@ export default function WatchVideo() {
 
         if (hasRegisteredView.current !== videoId) {
           hasRegisteredView.current = videoId;
-          registerView(videoId).catch(() => {});
+          registerView(videoId)
+            .then((newViews) => {
+              if (newViews !== undefined && !cancelled) {
+                setVideo((prev) =>
+                  prev ? { ...prev, views: `${newViews} view${newViews === 1 ? "" : "s"}` } : prev
+                );
+              }
+            })
+            .catch(() => {});
         }
       })
       .catch(() => {
