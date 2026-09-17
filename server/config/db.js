@@ -18,13 +18,16 @@ const connectDB = async () => {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      serverSelectionTimeoutMS: 5000,
     };
 
-    if (!process.env.MONGO_URI) {
-      throw new Error("MONGO_URI environment variable is missing.");
+    const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+
+    if (!mongoUri) {
+      throw new Error("MONGO_URI or MONGODB_URI environment variable is missing.");
     }
 
-    cached.promise = mongoose.connect(process.env.MONGO_URI, opts).then((mongooseInstance) => {
+    cached.promise = mongoose.connect(mongoUri, opts).then((mongooseInstance) => {
       console.log(`MongoDB connected: ${mongooseInstance.connection.host}`);
       return mongooseInstance;
     });

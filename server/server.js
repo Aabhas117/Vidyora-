@@ -2,13 +2,14 @@ const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const dotenv = require("dotenv");
+const mongoose = require("mongoose");
 const connectDB = require("./config/db");
 const { securityHeaders, mongoSanitize } = require("./middleware/security.middleware");
 const { apiLimiter } = require("./middleware/rateLimit.middleware");
 
 dotenv.config();
 
-if (!process.env.VERCEL) {
+if (!process.env.VERCEL && process.env.ENABLE_CUSTOM_DNS === "true") {
   try {
     const dns = require("dns");
     dns.setServers(["1.1.1.1", "8.8.8.8"]);
@@ -16,8 +17,6 @@ if (!process.env.VERCEL) {
     // Ignore DNS setServers failure in serverless or restricted network environments
   }
 }
-
-
 
 // Validate JWT_SECRET on startup without killing serverless process
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
@@ -35,19 +34,6 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 app.use(mongoSanitize);
-
-// Ensure MongoDB connection before handling API requests
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (error) {
-    console.error("Database connection middleware error:", error.message);
-    return res.status(500).json({
-      message: "Database connection failed.",
-    });
-  }
-});
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -74,23 +60,38 @@ app.use(
   }),
 );
 
-// Global API rate limiting for /api/v1
-app.use("/api/v1", apiLimiter);
-
-app.get('/', (req, res) => {
+// Public root & health check endpoints (accessible without DB connection)
+app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
     message: "Vidyora API running",
   });
 });
 
-// Health check
 app.get("/api/health", (req, res) => {
+  const dbConnected = mongoose.connection.readyState === 1;
   res.status(200).json({
     status: "ok",
     message: "Vidyora API is running",
+    dbConnected,
     timestamp: new Date().toISOString(),
   });
+});
+
+// Global API rate limiting for /api/v1
+app.use("/api/v1", apiLimiter);
+
+// Ensure MongoDB connection before handling /api/v1 requests
+app.use("/api/v1", async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Database connection middleware error:", error.message);
+    return res.status(500).json({
+      message: "Database connection failed.",
+    });
+  }
 });
 
 // Routes
