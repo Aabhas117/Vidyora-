@@ -9,7 +9,7 @@ const { apiLimiter } = require("./middleware/rateLimit.middleware");
 
 dotenv.config();
 
-if (!process.env.VERCEL && process.env.ENABLE_CUSTOM_DNS === "true") {
+if (!process.env.VERCEL) {
   try {
     const dns = require("dns");
     dns.setServers(["1.1.1.1", "8.8.8.8"]);
