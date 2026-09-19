@@ -1,28 +1,14 @@
-import videos from "../Data/videos";
+import { getVideos } from "./videoService";
 
 /**
- * MOCK search service.
- *
- * Later this becomes:
- *   export async function searchVideos(query) {
- *     const res = await axios.get("/api/v1/videos", { params: { search: query } });
- *     return res.data.videos;
- *   }
- *
- * Search.jsx never needs to change when that happens — it only calls
- * searchVideos(query) and renders whatever array comes back, exactly
- * like it does now.
+ * Real backend search service.
+ * Performs MongoDB text search ($text) via GET /api/v1/videos?search=query
  */
-export function searchVideos(query) {
-  const term = query.trim().toLowerCase();
-  if (!term) return [];
+export async function searchVideos(query, page = 1, limit = 10) {
+  const term = typeof query === "string" ? query.trim() : "";
+  if (!term) {
+    return { videos: [], totalPages: 0, currentPage: 1, totalCount: 0 };
+  }
 
-  return videos.filter((video) => {
-    return (
-      video.title.toLowerCase().includes(term) ||
-      video.channel.toLowerCase().includes(term) ||
-      video.description.toLowerCase().includes(term) ||
-      video.category.toLowerCase().includes(term)
-    );
-  });
+  return await getVideos({ search: term, page, limit });
 }

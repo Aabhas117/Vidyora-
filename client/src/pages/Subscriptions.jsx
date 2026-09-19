@@ -19,9 +19,9 @@ export default function Subscriptions() {
     setLoading(true);
     setError(false);
 
-    getVideos()
+    getVideos({ limit: 100 })
       .then((data) => {
-        if (!cancelled) setAllVideos(data);
+        if (!cancelled) setAllVideos(data.videos || []);
       })
       .catch(() => {
         if (!cancelled) setError(true);

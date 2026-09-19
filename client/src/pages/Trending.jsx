@@ -1,39 +1,12 @@
-import { useEffect, useState } from "react";
 import { TrendingUp } from "lucide-react";
-import { getVideos } from "../Services/videoService";
+import { usePaginatedVideos } from "../Hooks/usePaginatedVideos";
 import VideoGrid from "../Components/VideoGrid";
 
-function parseViews(viewsString) {
-  const match = viewsString.match(/([\d.]+)([KM]?)/i);
-  if (!match) return 0;
-  const [, num, suffix] = match;
-  const value = parseFloat(num);
-  if (suffix.toUpperCase() === "M") return value * 1_000_000;
-  if (suffix.toUpperCase() === "K") return value * 1_000;
-  return value;
-}
-
 export default function Trending() {
-  const [videos, setVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    getVideos()
-      .then((data) => {
-        if (!cancelled) {
-          const sorted = [...data].sort((a, b) => parseViews(b.views) - parseViews(a.views));
-          setVideos(sorted);
-        }
-      })
-      .catch(() => !cancelled && setError(true))
-      .finally(() => !cancelled && setLoading(false));
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { videos, loading, loadingMore, error, hasMore, loadMore } = usePaginatedVideos({
+    sort: "views",
+    limit: 12,
+  });
 
   if (loading) return <p className="text-sm text-zinc-500 text-center py-16">Loading videos...</p>;
   if (error) return <p className="text-sm text-zinc-500 text-center py-16">Couldn't load trending videos.</p>;
@@ -47,7 +20,20 @@ export default function Trending() {
       {videos.length === 0 ? (
         <p className="text-sm text-zinc-500 text-center py-16">No videos yet.</p>
       ) : (
-        <VideoGrid videos={videos} />
+        <>
+          <VideoGrid videos={videos} />
+          {hasMore && (
+            <div className="flex justify-center mt-10">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="px-6 py-2.5 rounded-full bg-zinc-800 border border-zinc-700 text-sm font-medium text-zinc-200 hover:bg-zinc-700 hover:border-zinc-600 transition-colors disabled:opacity-50"
+              >
+                {loadingMore ? "Loading more..." : "Load more"}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

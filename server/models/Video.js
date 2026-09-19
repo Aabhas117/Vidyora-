@@ -50,4 +50,6 @@ const videoSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+videoSchema.index({ title: "text", description: "text", category: "text" });
+
 module.exports = mongoose.model("Video", videoSchema);

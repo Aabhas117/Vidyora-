@@ -1,12 +1,18 @@
 import api from "./api";
 import { mapVideo } from "../Utils/videoMapper";
 
-export async function getVideos() {
-  const res = await api.get("/videos");
+export async function getVideos(params = {}) {
+  const res = await api.get("/videos", { params });
 
-  const videos = Array.isArray(res.data) ? res.data : res.data.videos || [];
+  const rawVideos = Array.isArray(res.data) ? res.data : res.data.videos || [];
+  const videos = rawVideos.map(mapVideo);
 
-  return videos.map(mapVideo);
+  return {
+    videos,
+    totalPages: res.data.totalPages ?? 1,
+    currentPage: res.data.currentPage ?? 1,
+    totalCount: res.data.totalCount ?? videos.length,
+  };
 }
 
 export async function getMyVideos() {

@@ -1,32 +1,8 @@
-import { useEffect, useState } from "react";
-import { getVideos } from "../Services/videoService";
+import { usePaginatedVideos } from "../Hooks/usePaginatedVideos";
 import VideoGrid from "../Components/VideoGrid";
 
 export default function Home() {
-  const [videos, setVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(false);
-
-    getVideos()
-      .then((data) => {
-        if (!cancelled) setVideos(data);
-      })
-      .catch(() => {
-        if (!cancelled) setError(true);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const { videos, loading, loadingMore, error, hasMore, loadMore } = usePaginatedVideos({ limit: 12 });
 
   if (loading) {
     return <p className="text-sm text-zinc-500 text-center py-16">Loading videos...</p>;
@@ -47,7 +23,20 @@ export default function Home() {
       {videos.length === 0 ? (
         <p className="text-sm text-zinc-500 text-center py-16">No videos yet.</p>
       ) : (
-        <VideoGrid videos={videos} />
+        <>
+          <VideoGrid videos={videos} />
+          {hasMore && (
+            <div className="flex justify-center mt-10">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="px-6 py-2.5 rounded-full bg-zinc-800 border border-zinc-700 text-sm font-medium text-zinc-200 hover:bg-zinc-700 hover:border-zinc-600 transition-colors disabled:opacity-50"
+              >
+                {loadingMore ? "Loading more..." : "Load more"}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

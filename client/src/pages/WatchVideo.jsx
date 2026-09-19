@@ -55,8 +55,9 @@ export default function WatchVideo() {
         if (!cancelled) setErrorVideoId(videoId);
       });
 
-    getVideos()
-      .then((all) => {
+    getVideos({ limit: 20 })
+      .then((res) => {
+        const all = res.videos || [];
         if (!cancelled) setUpNext(all.filter((v) => v.id !== videoId));
       })
       .catch(() => {
