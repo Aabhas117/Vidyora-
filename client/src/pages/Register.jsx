@@ -151,7 +151,7 @@ export default function Register() {
                     required
                     value={form.fullName}
                     onChange={handleChange}
-                    placeholder="Alex Morgan"
+                    placeholder="full name"
                     className="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl px-3.5 py-2.5 pl-9 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
                   />
                   <User
@@ -173,7 +173,7 @@ export default function Register() {
                     required
                     value={form.username}
                     onChange={handleChange}
-                    placeholder="alexmorgan"
+                    placeholder="username"
                     className="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl px-3.5 py-2.5 pl-9 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
                   />
                   <AtSign
@@ -197,7 +197,7 @@ export default function Register() {
                   required
                   value={form.email}
                   onChange={handleChange}
-                  placeholder="alex@example.com"
+                  placeholder="your@gmail.com"
                   className="w-full bg-zinc-950/80 border border-zinc-800 rounded-xl px-3.5 py-2.5 pl-9 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all"
                 />
                 <Mail
