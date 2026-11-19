@@ -60,7 +60,7 @@ export default function Login() {
             </Link>
             <h1 className="text-xl font-bold text-zinc-100">Sign in to your account</h1>
             <p className="text-xs text-zinc-400 mt-1">
-              Enter your credentials to continue to Vidyora
+              Enter your email and password
             </p>
           </div>
 

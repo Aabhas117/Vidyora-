@@ -94,7 +94,7 @@ export default function Register() {
             </Link>
             <h1 className="text-xl font-bold text-zinc-100">Create your account</h1>
             <p className="text-xs text-zinc-400 mt-1">
-              Join Vidyora to watch, upload, and subscribe
+              Vidyora to watch, upload, and subscribe
             </p>
           </div>
 
@@ -132,7 +132,7 @@ export default function Register() {
                   />
                 </label>
                 <p className="text-[11px] text-zinc-500 mt-1 truncate">
-                  JPG, PNG or GIF (Optional channel picture)
+                  JPG, PNG or GIF
                 </p>
               </div>
             </div>
